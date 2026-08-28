@@ -1,0 +1,1067 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#10b981">
+  <title>Food Stock</title>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <style>
+    :root {
+      --primary: #10b981; --primary-dark: #059669; --primary-light: #d1fae5;
+      --danger: #ef4444; --warning: #f59e0b; --bg-body: #f1f5f9;
+      --bg-app: #f8fafc; --bg-card: #ffffff; --text-main: #0f172a;
+      --text-muted: #64748b; --border-color: #e2e8f0;
+      --shadow-sm: 0 2px 4px rgba(0,0,0,0.05);
+      --shadow-md: 0 10px 15px -3px rgba(0,0,0,0.05);
+      --shadow-float: 0 10px 25px -5px rgba(16, 185, 129, 0.3);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Outfit', sans-serif; -webkit-tap-highlight-color: transparent; }
+    body { background-color: var(--bg-body); display: flex; justify-content: center; align-items: center; min-height: 100dvh; }
+    .app-container { width: 100%; height: 100dvh; background-color: var(--bg-app); position: relative; display: flex; flex-direction: column; overflow: hidden; }
+    @media (min-width: 600px) { .app-container { height: 90vh; max-height: 850px; max-width: 414px; border-radius: 24px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15); border: 1px solid var(--border-color); } }
+    .screen { display: none; flex: 1; flex-direction: column; height: 100%; overflow-y: auto; padding-bottom: 90px; opacity: 0; animation: fadeIn 0.3s ease forwards; }
+    .screen.active { display: flex; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    .header-bar { padding: 24px 24px 16px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; background: rgba(248, 250, 252, 0.9); backdrop-filter: blur(10px); z-index: 10; }
+    .header-title { font-size: 1.5rem; font-weight: 700; color: var(--text-main); }
+    .header-subtitle { color: var(--text-muted); font-size: 0.95rem; }
+    .btn-icon { background: var(--bg-card); border: 1px solid var(--border-color); width: 44px; height: 44px; border-radius: 14px; display: flex; justify-content: center; align-items: center; cursor: pointer; color: var(--text-main); box-shadow: var(--shadow-sm); transition: all 0.2s; }
+    .btn-icon:active { transform: scale(0.95); }
+    .section-title { font-size: 1.15rem; font-weight: 600; padding: 0 24px; margin: 16px 0 12px; color: var(--text-main); }
+    .input-group { display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px; width: 100%; }
+    .input-group label { font-size: 0.9rem; font-weight: 500; color: var(--text-main); }
+    input, select { width: 100%; padding: 16px; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 14px; font-size: 1rem; color: var(--text-main); outline: none; transition: border-color 0.2s; }
+    input:focus, select:focus { border-color: var(--primary); }
+    .btn-primary { background-color: var(--primary); color: white; border: none; padding: 16px; border-radius: 14px; font-weight: 600; font-size: 1.05rem; cursor: pointer; width: 100%; box-shadow: var(--shadow-float); transition: all 0.2s; }
+    .btn-primary:active { transform: scale(0.98); background-color: var(--primary-dark); }
+    #screen-login, #screen-register { justify-content: center; padding: 32px; background: linear-gradient(135deg, var(--bg-card) 0%, var(--primary-light) 100%); }
+    .logo-main { display: flex; flex-direction: column; align-items: center; margin-bottom: 40px; }
+    .logo-main i { background: var(--primary); color: white; padding: 18px; border-radius: 24px; margin-bottom: 16px; box-shadow: var(--shadow-float); }
+    .logo-main h1 { font-size: 2.2rem; color: var(--text-main); }
+    .logo-main h1 span { color: var(--primary); }
+    .dashboard-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; padding: 0 24px; margin-bottom: 24px; }
+    .dash-card { background: var(--bg-card); padding: 20px; border-radius: 20px; box-shadow: var(--shadow-md); display: flex; flex-direction: column; gap: 12px; border: 1px solid var(--border-color); }
+    .dash-card.highlight { background: var(--primary); color: white; border: none; }
+    .dash-card.highlight p { color: rgba(255,255,255,0.8); }
+    .dash-card h3 { font-size: 1.8rem; font-weight: 700; line-height: 1; }
+    .dash-card p { font-size: 0.85rem; color: var(--text-muted); font-weight: 500; }
+    .dash-card i { background: rgba(0,0,0,0.05); padding: 8px; border-radius: 10px; align-self: flex-start; }
+    .dash-card.highlight i { background: rgba(255,255,255,0.2); }
+    .list-wrapper { padding: 0 24px; display: flex; flex-direction: column; gap: 12px; }
+    .list-item { background: var(--bg-card); border-radius: 16px; padding: 16px; display: flex; align-items: center; gap: 16px; box-shadow: var(--shadow-sm); cursor: pointer; border: 1px solid transparent; transition: all 0.2s; }
+    .list-item:active { transform: scale(0.98); border-color: var(--primary-light); }
+    .emoji-icon { font-size: 1.8rem; background: var(--bg-app); width: 50px; height: 50px; display: flex; justify-content: center; align-items: center; border-radius: 14px; }
+    .item-text { flex: 1; }
+    .item-text h4 { font-size: 1.05rem; color: var(--text-main); margin-bottom: 2px; }
+    .item-text p { font-size: 0.85rem; color: var(--text-muted); }
+    .badge { font-size: 0.75rem; padding: 4px 8px; border-radius: 8px; font-weight: 600; }
+    .badge.warning { background: #fef3c7; color: #d97706; }
+    .badge.good { background: var(--primary-light); color: var(--primary-dark); }
+    .fab { position: absolute; bottom: 100px; right: 24px; background: var(--primary); color: white; width: 56px; height: 56px; border-radius: 50%; display: flex; justify-content: center; align-items: center; box-shadow: var(--shadow-float); border: none; cursor: pointer; z-index: 50; transition: transform 0.2s; }
+    .fab:active { transform: scale(0.9); }
+    .bottom-nav { position: absolute; bottom: 0; left: 0; width: 100%; height: 80px; background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); display: flex; justify-content: space-around; align-items: center; border-top: 1px solid var(--border-color); z-index: 100; padding-bottom: env(safe-area-inset-bottom, 10px); }
+    .nav-btn { display: flex; flex-direction: column; align-items: center; gap: 4px; color: var(--text-muted); background: none; border: none; font-size: 0.75rem; font-weight: 600; cursor: pointer; width: 64px; }
+    .nav-btn.active { color: var(--primary); }
+    .nav-btn.active i { transform: translateY(-2px); }
+    .nav-btn i { transition: transform 0.2s; }
+
+    /* --- DISEÑO DEL CHAT Y PESTAÑAS --- */
+    .tabs-header { display: flex; border-bottom: 1px solid var(--border-color); margin: 0 24px 16px; }
+    .tab-btn { flex: 1; padding: 12px 0; text-align: center; font-weight: 600; color: var(--text-muted); cursor: pointer; border-bottom: 3px solid transparent; transition: all 0.2s; }
+    .tab-btn.active { color: var(--primary); border-bottom-color: var(--primary); }
+    .tab-content { display: none; flex: 1; flex-direction: column; overflow-y: auto; }
+    .tab-content.active { display: flex; }
+
+    .chat-container { display: flex; flex-direction: column; gap: 16px; padding: 0 24px 16px; overflow-y: auto; flex: 1; }
+    .msg-bubble { max-width: 85%; padding: 14px 18px; border-radius: 18px; font-size: 0.95rem; line-height: 1.5; position: relative; }
+    .msg-ia { background: var(--bg-card); border: 1px solid var(--border-color); color: var(--text-main); align-self: flex-start; border-bottom-left-radius: 4px; box-shadow: var(--shadow-sm); }
+    .msg-user { background: var(--primary); color: white; align-self: flex-end; border-bottom-right-radius: 4px; box-shadow: var(--shadow-float); }
+    
+    .chat-input-area { padding: 16px 24px; display: flex; gap: 12px; align-items: center; }
+    .chat-input-area input { flex: 1; border-radius: 24px; padding: 14px 20px; background: var(--bg-card); border: 1px solid var(--border-color); }
+    .btn-send { background: var(--primary); color: white; border: none; width: 48px; height: 48px; border-radius: 50%; display: flex; justify-content: center; align-items: center; cursor: pointer; transition: transform 0.2s; }
+    .btn-send:active { transform: scale(0.9); }
+    
+    .btn-like { position: absolute; bottom: -12px; right: -12px; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 50%; width: 32px; height: 32px; display: flex; justify-content: center; align-items: center; cursor: pointer; box-shadow: var(--shadow-sm); transition: all 0.2s; color: var(--text-muted); }
+    .btn-like.liked { color: var(--danger); border-color: #fecaca; background: #fef2f2; }
+    .btn-like.liked svg { fill: var(--danger); stroke: var(--danger); }
+    
+    /* --- DISEÑO DEL MODAL FLOTANTE --- */
+    .modal-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.4); z-index: 1000; display: none; justify-content: center; align-items: flex-end; backdrop-filter: blur(4px); }
+    .modal-overlay.active { display: flex; animation: fadeInModal 0.3s forwards; }
+    @keyframes fadeInModal { from { opacity: 0; } to { opacity: 1; } }
+    
+    .modal-content { background: var(--bg-card); width: 100%; max-height: 85vh; border-radius: 24px 24px 0 0; display: flex; flex-direction: column; box-shadow: 0 -10px 25px rgba(0,0,0,0.1); transform: translateY(100%); animation: slideUp 0.3s ease forwards; }
+    @keyframes slideUp { to { transform: translateY(0); } }
+    
+    .modal-header { padding: 20px 24px; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; }
+    .modal-body { padding: 24px; overflow-y: auto; font-size: 1rem; line-height: 1.6; color: var(--text-main); white-space: pre-line; }
+    
+    /* --- DISEÑO DE LOS FILTROS DEL CHAT --- */
+    .chat-filters-container { padding: 12px 24px 8px; }
+    .chat-filters { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 8px; }
+    .chat-filters::-webkit-scrollbar { display: none; }
+    .filter-chip { padding: 6px 14px; border-radius: 20px; font-size: 0.85rem; font-weight: 500; cursor: pointer; border: 1px solid var(--border-color); background: var(--bg-card); color: var(--text-muted); white-space: nowrap; transition: all 0.2s; user-select: none; }
+    .filter-chip.active { background: var(--primary-light); color: var(--primary-dark); border-color: var(--primary); }
+  </style>
+</head>
+<body>
+
+  <div class="app-container">
+
+    <!-- LOGIN -->
+    <main class="screen active" id="screen-login">
+      <div class="logo-main">
+        <i data-lucide="refrigerator" stroke-width="1.5" width="56" height="56"></i>
+        <h1>Food <span>Stock</span></h1>
+      </div>
+      <form onsubmit="handleLogin(event)">
+        <div class="input-group"><input type="text" id="login-identificador" placeholder="Correo electrónico o Usuario" required></div>
+        <div class="input-group"><input type="password" id="login-password" placeholder="Contraseña" required></div>
+        <div id="login-error"></div>
+        <button type="submit" class="btn-primary" style="margin-top: 10px;">Ingresar</button>
+        <div style="text-align: center; margin-top: 24px;">
+          <a href="#" onclick="switchScreen('screen-register'); return false;" style="color: var(--primary); font-weight: 600; text-decoration: none;">Registrarme</a>
+        </div>
+      </form>
+    </main>
+
+    <!-- REGISTRO -->
+    <main class="screen" id="screen-register">
+      <div class="logo-main" style="margin-bottom: 24px;">
+        <i data-lucide="user-plus" stroke-width="1.5" width="48" height="48"></i>
+        <h2 style="font-size: 1.8rem; color: var(--text-main); margin-top: 10px;">Crear <span>Cuenta</span></h2>
+      </div>
+      <form onsubmit="handleRegister(event)">
+        <div class="input-group"><input type="email" id="reg-email" placeholder="Email" required></div>
+        <div class="input-group"><input type="text" id="reg-nombre" placeholder="Nombre Completo" required></div>
+        <div class="input-group"><input type="text" id="reg-username" placeholder="Nombre de Usuario" required></div>
+        <div class="input-group"><input type="password" id="reg-password" placeholder="Contraseña" required></div>
+        <div class="input-group"><input type="password" id="reg-confirm-password" placeholder="Confirmar Contraseña" required></div>
+        <div id="register-error"></div>
+        <button type="submit" class="btn-primary" style="margin-top: 10px;">Registrar</button>
+        <div style="text-align: center; margin-top: 24px;">
+          <a href="#" onclick="switchScreen('screen-login'); return false;" style="color: var(--text-muted); font-weight: 500; text-decoration: none;">Volver a Iniciar sesión</a>
+        </div>
+      </form>
+    </main>
+
+    <!-- INICIO (HOME) -->
+    <main class="screen" id="screen-home">
+      <div class="header-bar">
+        <div>
+          <h2 class="header-title" id="home-greeting">Hola 👋</h2>
+          <p class="header-subtitle">Tu inventario está al día</p>
+        </div>
+        <div class="btn-icon" onclick="switchScreen('screen-account')">
+          <i data-lucide="user"></i>
+        </div>
+      </div>
+
+      <div class="dashboard-grid">
+        <div class="dash-card highlight">
+          <i data-lucide="package" stroke-width="2" width="24" height="24"></i>
+          <h3 id="dash-total-alimentos">0</h3>
+          <p>Alimentos totales</p>
+        </div>
+        <div class="dash-card">
+          <i data-lucide="alert-triangle" stroke-width="2" width="24" height="24" style="color: var(--warning)"></i>
+          <h3 id="dash-vencen-pronto" style="color: var(--warning)">0</h3>
+          <p>Por vencer pronto</p>
+        </div>
+      </div>
+
+      <h3 class="section-title" style="display: flex; justify-content: space-between; align-items: center;">
+        Espacios de Guardado
+        <button onclick="switchScreen('screen-add-space')" style="font-size: 0.9rem; color: var(--primary); background: none; border: none; font-weight: 600; cursor: pointer;">+ Agregar</button>
+      </h3>
+      
+      <div class="list-wrapper" id="home-lugares-list">
+        <p style="padding: 16px; text-align: center; color: var(--text-muted); font-size: 0.9rem;">Cargando espacios...</p>
+      </div>
+    </main>
+
+    <!-- AÑADIR ESPACIO -->
+    <main class="screen" id="screen-add-space">
+      <div class="header-bar">
+        <button class="btn-icon" onclick="switchScreen('screen-home')"><i data-lucide="x"></i></button>
+        <h2 class="header-title">Nuevo Espacio</h2>
+        <div style="width: 44px;"></div>
+      </div>
+      <div style="padding: 24px;">
+        <form onsubmit="handleAddSpace(event)">
+          <div class="input-group">
+            <label>Nombre (Ej: Heladera Cocina)</label>
+            <input type="text" id="space-nombre" required>
+          </div>
+          <div class="input-group">
+            <label>Tipo</label>
+            <select id="space-tipo" required onchange="document.getElementById('group-subtipo').style.display = this.value === 'Otro' ? 'flex' : 'none'">
+              <option value="Heladera">Heladera</option>
+              <option value="Freezer">Freezer</option>
+              <option value="Otro">Otro (Alacena, Repisa, etc.)</option>
+            </select>
+          </div>
+          <div class="input-group" id="group-subtipo" style="display: none;">
+            <label>Especificar (Ej: Bajomesada)</label>
+            <input type="text" id="space-subtipo" placeholder="¿Qué tipo de mueble es?">
+          </div>
+          <button type="submit" class="btn-primary" style="margin-top: 24px;">Crear Espacio</button>
+        </form>
+      </div>
+    </main>
+
+    <!-- ALMACENAMIENTO (LISTA DE ALIMENTOS) -->
+    <main class="screen" id="screen-storage">
+      <div class="header-bar">
+        <button class="btn-icon" onclick="switchScreen('screen-home')"><i data-lucide="chevron-left"></i></button>
+        <h2 class="header-title" id="storage-title">Inventario</h2>
+        <div style="width: 44px;"></div> 
+      </div>
+      <h3 class="section-title">Artículos</h3>
+      <div class="list-wrapper" id="storage-alimentos-list">
+        <p style="padding: 16px; text-align: center; color: var(--text-muted); font-size: 0.9rem;">Cargando alimentos...</p>
+      </div>
+      <button class="fab" onclick="switchScreen('screen-add')">
+        <i data-lucide="plus" width="28" height="28"></i>
+      </button>
+    </main>
+
+    <!-- AÑADIR ALIMENTO -->
+    <main class="screen" id="screen-add">
+      <div class="header-bar">
+        <button class="btn-icon" onclick="switchScreen('screen-storage')"><i data-lucide="x"></i></button>
+        <h2 class="header-title">Añadir Alimento</h2>
+        <div style="width: 44px;"></div>
+      </div>
+      <div style="padding: 24px;">
+        <form onsubmit="handleAddAlimento(event)">
+          <div class="input-group">
+            <label>Ubicación *</label>
+            <select id="add-ubicacion" required onchange="calcularVencimientoCarne()">
+              <option value="">Cargando ubicaciones...</option>
+            </select>
+          </div>
+          <div class="input-group">
+            <label>Nombre del producto *</label>
+            <input type="text" id="add-nombre" placeholder="Ej. Fideos Tirabuzón" required>
+          </div>
+          <div class="input-group">
+            <label>Marca (Opcional)</label>
+            <input type="text" id="add-marca" placeholder="Ej. Lucchetti, La Serenísima">
+          </div>
+          <div class="input-group">
+            <label>Categoría *</label>
+            <select id="add-categoria" required onchange="toggleEstadoFisico(this.value); calcularVencimientoCarne();">
+              <option value="">Seleccionar...</option>
+              <option value="Lácteos y Derivados">Lácteos y Derivados</option>
+              <option value="Verduras y Hortalizas">Verduras y Hortalizas</option>
+              <option value="Frutas">Frutas</option>
+              <option value="Carnes">Carnes y Proteínas Animales</option>
+              <option value="Despensa, Secos y Cereales">Despensa, Secos y Cereales</option>
+              <option value="Aceites, Condimentos y Salsas">Aceites, Condimentos y Salsas</option>
+              <option value="Bebidas">Bebidas</option>
+              <option value="Dulces, Repostería y Snacks">Dulces, Repostería y Snacks</option>
+              <option value="Dietética, Vegano y Especiales">Dietética, Vegano y Especiales</option>
+            </select>
+          </div>
+          <div class="input-group" id="group-estado-fisico" style="display: none;">
+            <label>Corte / Estado Físico *</label>
+            <select id="add-estado-fisico" onchange="calcularVencimientoCarne()">
+              <option value="">Seleccionar estado...</option>
+              <option value="Pieza Entera">Pieza Entera (Bife, Asado, Pechuga)</option>
+              <option value="Picada / Molida">Picada / Molida</option>
+              <option value="Trozado">Trozado</option>
+              <option value="Filet Fresco">Filet Fresco / Entero</option>
+            </select>
+          </div>
+          <div style="display: flex; gap: 12px; margin-bottom: 16px;">
+            <div class="input-group" style="margin-bottom: 0; flex: 1;">
+              <label>Cantidad *</label>
+              <input type="number" id="add-cantidad" step="0.01" min="0.1" placeholder="Ej. 500" required>
+            </div>
+            <div class="input-group" style="margin-bottom: 0; flex: 1;">
+              <label>Unidad *</label>
+              <select id="add-unidad" required>
+                <option value="g">Gramos (g)</option>
+                <option value="kg">Kilos (kg)</option>
+                <option value="ml">Mililitros (ml)</option>
+                <option value="l">Litros (L)</option>
+                <option value="unidades">Unidades</option>
+                <option value="paquetes">Paquetes</option>
+                <option value="cajas">Cajas</option>
+                <option value="bolsas">Bolsas</option>
+              </select>
+            </div>
+          </div>
+          <div class="input-group">
+            <label>Fecha de Vencimiento *</label>
+            <input type="date" id="add-fecha" required style="transition: all 0.3s;">
+          </div>
+          <button type="submit" class="btn-primary" style="margin-top: 16px;">Guardar Alimento</button>
+        </form>
+      </div>
+    </main>
+
+    <!-- PANTALLA: RECETAS (CHAT IA Y FAVORITOS) -->
+    <main class="screen" id="screen-recipes" style="padding-bottom: 0;">
+      <div class="header-bar" style="padding-bottom: 0;">
+        <h2 class="header-title">Chef Inteligente</h2>
+      </div>
+
+      <div class="tabs-header">
+        <div class="tab-btn active" id="tab-btn-chat" onclick="switchRecipeTab('chat')">Chat IA</div>
+        <div class="tab-btn" id="tab-btn-favs" onclick="switchRecipeTab('favs')">Mis Recetas</div>
+      </div>
+
+      <!-- CONTENIDO 1: EL CHAT -->
+      <div class="tab-content active" id="tab-content-chat" style="padding-bottom: 80px; display: flex; flex-direction: column;">
+        
+        <div class="chat-container" id="chat-messages" style="flex: 1; padding-bottom: 16px;">
+          <div class="msg-bubble msg-ia">
+            ¡Hola! Soy tu Chef virtual. Ya revisé tu heladera y el perfil de tu familia. ¿Qué tenés ganas de comer hoy?
+          </div>
+        </div>
+
+        <!-- STICKY WRAPPER: Filtros y Cuadro de texto unidos (SOLUCIÓN AL BUG) -->
+        <div style="background: rgba(248, 250, 252, 0.95); backdrop-filter: blur(10px); border-top: 1px solid var(--border-color); z-index: 10;">
+          
+          <div class="chat-filters-container" style="background: transparent; border-top: none; padding-bottom: 0;">
+            <span style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 8px; display: block;">Buscar ingredientes en:</span>
+            <div class="chat-filters" id="chat-space-filters">
+              <!-- Acá JS inyecta los botones -->
+            </div>
+          </div>
+
+          <div class="chat-input-area" style="position: static; background: transparent; border-top: none;">
+            <button type="button" onclick="clearChat()" title="Reiniciar chat" style="background: none; border: none; color: var(--text-muted); cursor: pointer; display: flex; align-items: center; justify-content: center; width: 44px; height: 44px; transition: color 0.2s;">
+              <i data-lucide="refresh-cw" style="width: 20px; height: 20px;"></i>
+            </button>
+            <input type="text" id="chat-input" placeholder="Ej: Quiero una cena rápida..." onkeypress="if(event.key === 'Enter') handleSendChatUI()">
+            <button class="btn-send" onclick="handleSendChatUI()">
+              <i data-lucide="send" style="width: 20px; height: 20px; margin-left: -2px;"></i>
+            </button>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- CONTENIDO 2: LAS RECETAS GUARDADAS -->
+      <div class="tab-content" id="tab-content-favs" style="padding-bottom: 90px;">
+        <div class="list-wrapper" id="lista-recetas-guardadas">
+          <p style="padding: 16px; text-align: center; color: var(--text-muted); font-size: 0.9rem;">No tenés recetas guardadas todavía.</p>
+        </div>
+      </div>
+    </main>
+
+    <!-- CUENTA (PERFIL) -->
+    <main class="screen" id="screen-account">
+      <div class="header-bar"><h2 class="header-title">Mi Cuenta</h2></div>
+      <div style="display: flex; flex-direction: column; align-items: center; margin-top: 24px; padding: 0 24px;">
+        <div style="width: 80px; height: 80px; background: var(--primary-light); color: var(--primary); border-radius: 24px; display: flex; justify-content: center; align-items: center; margin-bottom: 16px;">
+          <i data-lucide="user" width="40" height="40"></i>
+        </div>
+        <h2 style="color: var(--text-main);" id="account-name">Usuario</h2>
+        
+        <div class="list-wrapper" style="width: 100%; padding: 0; margin-top: 32px;">
+          <div class="list-item" onclick="switchScreen('screen-family-profile')">
+            <i data-lucide="settings" color="var(--text-muted)"></i>
+            <div class="item-text"><h4>Configuración Familiar</h4></div>
+            <i data-lucide="chevron-right" color="#cbd5e1"></i>
+          </div>
+
+          <div class="list-item" onclick="switchScreen('screen-login')" style="margin-top: 24px; border: 1px solid #fee2e2;">
+            <i data-lucide="log-out" color="var(--danger)"></i>
+            <div class="item-text"><h4 style="color: var(--danger);">Cerrar Sesión</h4></div>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- PANTALLA: PERFIL FAMILIAR -->
+    <main class="screen" id="screen-family-profile">
+      <div class="header-bar">
+        <button class="btn-icon" onclick="switchScreen('screen-account')">
+          <i data-lucide="chevron-left"></i>
+        </button>
+        <h2 class="header-title">Grupo Familiar</h2>
+        <div style="width: 44px;"></div>
+      </div>
+      
+      <div style="padding: 24px;">
+        <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 24px;">
+          Esta info ayuda a la IA a recomendar recetas seguras y descartar lo que no comen.
+        </p>
+
+        <form onsubmit="handleSaveProfile(event)">
+          <div class="input-group">
+            <label>¿Cuántos integrantes son?</label>
+            <input type="number" id="prof-integrantes" min="1" value="1" required>
+          </div>
+          
+          <div class="input-group" style="flex-direction: row; align-items: center; gap: 12px;">
+            <input type="checkbox" id="prof-menores" style="width: 24px; height: 24px; accent-color: var(--primary);">
+            <label style="margin: 0; font-size: 0.95rem;">Hay menores de 5 años en casa</label>
+          </div>
+
+          <h3 class="section-title" style="padding: 0; margin-top: 32px;">Restricciones y Dietas</h3>
+          
+          <div class="input-group">
+            <label>Tipo de Alimentación (General)</label>
+            <select id="prof-dieta" required>
+              <option value="Omnívora">Omnívora</option>
+              <option value="Vegetariana">Vegetariana</option>
+              <option value="Vegana">Vegana</option>
+              <option value="Celíaca">Celíaca</option>
+              <option value="Diabética">Diabética</option>
+            </select>
+          </div>
+
+          <div class="input-group">
+            <label>Alergias (Opcional)</label>
+            <input type="text" id="prof-alergias" placeholder="Ej: Maní, Frutillas (separar con coma)">
+          </div>
+          
+          <div class="input-group">
+            <label>Intolerancias (Mantené presionado Ctrl para elegir varias)</label>
+            <select id="prof-intolerancias" multiple style="height: 120px;">
+              <option value="Ninguna">Ninguna</option>
+              <option value="Lactosa">Lactosa</option>
+              <option value="Gluten">Gluten</option>
+              <option value="Fructosa">Fructosa</option>
+              <option value="Histamina">Histamina</option>
+              <option value="FODMAP">FODMAP</option>
+            </select>
+          </div>
+
+          <h3 class="section-title" style="padding: 0; margin-top: 32px;">No nos gusta...</h3>
+          <div class="input-group">
+            <label>Agregá ingredientes que prefieren evitar</label>
+            <div style="display: flex; gap: 8px;">
+              <input type="text" id="input-odiado" placeholder="Ej: Mondongo, Pasas de uva">
+              <button type="button" class="btn-primary" style="width: auto; padding: 0 20px;" onclick="addOdiado()">Agregar</button>
+            </div>
+            <div id="lista-odiados" style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px;"></div>
+          </div>
+
+          <button type="submit" class="btn-primary" style="margin-top: 32px; margin-bottom: 24px;">Guardar Configuración</button>
+        </form>
+      </div>
+    </main>
+
+    <!-- NAVEGACIÓN INFERIOR -->
+    <nav class="bottom-nav" id="main-nav" style="display: none;">
+      <button class="nav-btn active" id="nav-home" onclick="switchScreen('screen-home')"><i data-lucide="home"></i><span>Inicio</span></button>
+      <button class="nav-btn" id="nav-recipes" onclick="switchScreen('screen-recipes')"><i data-lucide="book-open"></i><span>Recetas</span></button>
+      <button class="nav-btn" id="nav-account" onclick="switchScreen('screen-account')"><i data-lucide="user"></i><span>Cuenta</span></button>
+    </nav>
+
+    <!-- MODAL FLOTANTE PARA VER LA RECETA -->
+    <div class="modal-overlay" id="recipe-modal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3 class="section-title" style="margin: 0; padding: 0;" id="modal-title">Título</h3>
+          <i data-lucide="x" style="cursor: pointer; color: var(--text-muted);" onclick="closeModal()"></i>
+        </div>
+        <div class="modal-body" id="modal-body-content">
+          Cargando contenido...
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    lucide.createIcons();
+    const API_URL = 'https://MatiasArbeleche.pythonanywhere.com';
+
+    // --- NAVEGACIÓN ---
+    function switchScreen(screenId) {
+      document.querySelectorAll('.screen').forEach(el => el.classList.remove('active'));
+      const newScreen = document.getElementById(screenId);
+      if (newScreen) { newScreen.classList.add('active'); newScreen.scrollTo(0, 0); }
+
+      const nav = document.getElementById('main-nav');
+      if (['screen-login', 'screen-add', 'screen-register', 'screen-add-space', 'screen-family-profile'].includes(screenId)) {
+        nav.style.display = 'none';
+      } else { 
+        nav.style.display = 'flex'; 
+      }
+
+      document.querySelectorAll('.nav-btn').forEach(el => el.classList.remove('active'));
+      
+      if (['screen-home', 'screen-storage'].includes(screenId)) {
+        document.getElementById('nav-home')?.classList.add('active');
+      } else if (screenId === 'screen-recipes') {
+        document.getElementById('nav-recipes')?.classList.add('active');
+        cargarFiltrosChat(); 
+      } else if (screenId === 'screen-account') {
+        document.getElementById('nav-account')?.classList.add('active');
+      } else if (screenId === 'screen-family-profile') {
+        loadProfile(); // Ejecuta la carga de datos al abrir la pantalla
+      }
+
+      lucide.createIcons();
+    }
+
+    function abrirLugar(nombreLugar) {
+      document.getElementById('storage-title').innerText = nombreLugar;
+      loadAlimentos(nombreLugar);
+      switchScreen('screen-storage');
+    }
+
+    // --- DASHBOARD (INICIO) ---
+    async function updateDashboardStats() {
+      const usuarioData = JSON.parse(localStorage.getItem('usuario'));
+      if (!usuarioData) return;
+      try {
+        const respuesta = await fetch(`${API_URL}/alimentos?usuario_id=${usuarioData.id}`);
+        const data = await respuesta.json();
+        if (respuesta.ok) {
+          const totalAlimentos = data.alimentos.length;
+          let vencenPronto = 0;
+          const hoy = new Date(); hoy.setHours(0, 0, 0, 0);
+          data.alimentos.forEach(alim => {
+            const fechaVenc = new Date(alim.fecha_vencimiento + 'T00:00:00'); 
+            const difDias = Math.ceil((fechaVenc.getTime() - hoy.getTime()) / (1000 * 60 * 60 * 24));
+            if (difDias <= 3) vencenPronto++;
+          });
+          document.getElementById('dash-total-alimentos').innerText = totalAlimentos;
+          document.getElementById('dash-vencen-pronto').innerText = vencenPronto;
+        }
+      } catch (error) { console.error("Error estadísticas:", error); }
+    }
+
+    // --- CARGAR ESPACIOS ---
+    async function loadLugares() {
+      const usuarioData = JSON.parse(localStorage.getItem('usuario'));
+      if (!usuarioData) return;
+      try {
+        const respuesta = await fetch(`${API_URL}/lugares?usuario_id=${usuarioData.id}`);
+        const data = await respuesta.json();
+        if (respuesta.ok) {
+          const listContainer = document.getElementById('home-lugares-list');
+          const selectUbicacion = document.getElementById('add-ubicacion');
+          listContainer.innerHTML = ''; selectUbicacion.innerHTML = '<option value="">Seleccionar ubicación...</option>';
+          if (data.lugares.length === 0) {
+            listContainer.innerHTML = '<p style="padding: 16px; text-align: center; color: var(--text-muted); font-size: 0.9rem;">No tenés espacios creados. ¡Agregá uno para empezar!</p>';
+            return;
+          }
+          data.lugares.forEach(lugar => {
+            let emoji = lugar.tipo === 'Heladera' ? '🧊' : (lugar.tipo === 'Freezer' ? '❄️' : '🥫');
+            listContainer.innerHTML += `
+              <div class="list-item" onclick="abrirLugar('${lugar.nombre}')">
+                <div class="emoji-icon">${emoji}</div>
+                <div class="item-text"><h4>${lugar.nombre}</h4><p>${lugar.tipo === 'Otro' ? lugar.subtipo : lugar.tipo}</p></div>
+                <i data-lucide="chevron-right" color="#cbd5e1"></i>
+              </div>
+            `;
+            selectUbicacion.innerHTML += `<option value="${lugar.nombre}">${lugar.nombre}</option>`;
+          });
+          lucide.createIcons();
+        }
+        updateDashboardStats();
+      } catch (error) { console.error("Error lugares:", error); }
+    }
+
+    // --- CARGAR ALIMENTOS (CON SEMÁFORO) ---
+    async function loadAlimentos(nombreLugar) {
+      const usuarioData = JSON.parse(localStorage.getItem('usuario'));
+      if (!usuarioData) return;
+      try {
+        const respuesta = await fetch(`${API_URL}/alimentos?usuario_id=${usuarioData.id}&lugar=${nombreLugar}`);
+        const data = await respuesta.json();
+        const listContainer = document.getElementById('storage-alimentos-list');
+        listContainer.innerHTML = '';
+        if (data.alimentos.length === 0) {
+          listContainer.innerHTML = '<p style="padding: 16px; text-align: center; color: var(--text-muted); font-size: 0.9rem;">No hay alimentos acá todavía.</p>';
+          return;
+        }
+        data.alimentos.forEach(alim => {
+          let emoji = '📦';
+          if(alim.categoria.includes('Lácteos')) emoji = '🥛';
+          if(alim.categoria.includes('Carnes')) emoji = '🥩';
+          if(alim.categoria.includes('Verduras')) emoji = '🥗';
+          if(alim.categoria.includes('Frutas')) emoji = '🍎';
+          if(alim.categoria.includes('Bebidas')) emoji = '🥤';
+          if(alim.categoria.includes('Despensa')) emoji = '🍝';
+          if(alim.categoria.includes('Dulces')) emoji = '🍫';
+
+          let textoDetalle = '';
+          if (alim.marca) textoDetalle += `${alim.marca} • `;
+          textoDetalle += `${alim.cantidad} ${alim.unidad}`;
+          if (alim.estado_fisico) textoDetalle += ` • ${alim.estado_fisico}`;
+
+          const hoy = new Date(); hoy.setHours(0, 0, 0, 0);
+          const fechaVenc = new Date(alim.fecha_vencimiento + 'T00:00:00');
+          const difDias = Math.ceil((fechaVenc.getTime() - hoy.getTime()) / (1000 * 60 * 60 * 24));
+
+          let badgeColor = ''; let badgeText = '';
+          if (difDias < 0) { badgeColor = 'background: #1e293b; color: #f8fafc;'; badgeText = '¡Vencido!'; }
+          else if (difDias <= 1) { badgeColor = 'background: #fee2e2; color: #ef4444;'; badgeText = difDias === 0 ? 'Vence hoy' : 'Vence mañana'; }
+          else if (difDias <= 3) { badgeColor = 'background: #ffedd5; color: #f97316;'; badgeText = `Vence en ${difDias} días`; }
+          else { badgeColor = 'background: var(--primary-light); color: var(--primary-dark);'; badgeText = 'En fecha'; }
+
+          listContainer.innerHTML += `
+            <div class="list-item">
+              <div class="emoji-icon">${emoji}</div>
+              <div class="item-text"><h4 style="text-transform: capitalize;">${alim.nombre}</h4><p>${textoDetalle}</p></div>
+              <span class="badge" style="${badgeColor}">${badgeText}</span>
+            </div>
+          `;
+        });
+      } catch (error) { console.error("Error alimentos:", error); }
+    }
+
+    // --- FORMULARIOS ---
+    async function handleLogin(event) {
+      event.preventDefault();
+      const identificador = document.getElementById('login-identificador').value;
+      const password = document.getElementById('login-password').value;
+      const errorDiv = document.getElementById('login-error'); errorDiv.innerHTML = ""; 
+      try {
+        const respuesta = await fetch(`${API_URL}/login`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ identificador, password }) });
+        const data = await respuesta.json();
+        if (respuesta.ok) {
+          localStorage.setItem('usuario', JSON.stringify(data.usuario));
+          document.getElementById('home-greeting').innerText = `Hola, ${data.usuario.nombre.split(' ')[0]} 👋`;
+          document.getElementById('account-name').innerText = data.usuario.nombre;
+          switchScreen('screen-home'); loadLugares();
+        } else { errorDiv.innerHTML = `<p style="color: var(--danger); font-size: 0.85rem; margin-top: 5px;">*${data.mensaje}*</p>`; }
+      } catch (error) { errorDiv.innerHTML = `<p style="color: var(--danger); font-size: 0.85rem; margin-top: 5px;">*Error de conexión*</p>`; }
+    }
+
+    async function handleRegister(event) {
+      event.preventDefault();
+      const email = document.getElementById('reg-email').value;
+      const nombre = document.getElementById('reg-nombre').value;
+      const username = document.getElementById('reg-username').value;
+      const password = document.getElementById('reg-password').value;
+      const confirmPassword = document.getElementById('reg-confirm-password').value;
+      const errorDiv = document.getElementById('register-error'); errorDiv.innerHTML = "";
+      if (password !== confirmPassword) { errorDiv.innerHTML = `<p style="color: var(--danger); font-size: 0.85rem; margin-top: 5px;">*Las contraseñas no coinciden*</p>`; return; }
+      try {
+        const respuesta = await fetch(`${API_URL}/registro`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, nombre_completo: nombre, username, password }) });
+        const data = await respuesta.json();
+        if (respuesta.ok) { alert("¡Cuenta creada!"); switchScreen('screen-login'); }
+        else { errorDiv.innerHTML = `<p style="color: var(--danger); font-size: 0.85rem; margin-top: 5px;">*${data.mensaje}*</p>`; }
+      } catch (error) { errorDiv.innerHTML = `<p style="color: var(--danger); font-size: 0.85rem; margin-top: 5px;">*Error de conexión*</p>`; }
+    }
+
+    async function handleAddSpace(event) {
+      event.preventDefault();
+      const nombre = document.getElementById('space-nombre').value;
+      const tipo = document.getElementById('space-tipo').value;
+      const subtipo = document.getElementById('space-subtipo').value;
+      const usuarioData = JSON.parse(localStorage.getItem('usuario'));
+      try {
+        const respuesta = await fetch(`${API_URL}/lugares`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ usuario_id: usuarioData.id, nombre, tipo, subtipo }) });
+        if (respuesta.ok) { alert("¡Espacio creado!"); event.target.reset(); document.getElementById('group-subtipo').style.display = 'none'; switchScreen('screen-home'); loadLugares(); }
+        else { const data = await respuesta.json(); alert("Error: " + data.mensaje); }
+      } catch (error) { console.error(error); }
+    }
+
+    function toggleEstadoFisico(categoria) {
+      const grupo = document.getElementById('group-estado-fisico'); const select = document.getElementById('add-estado-fisico');
+      if (categoria === 'Carnes') { grupo.style.display = 'flex'; select.setAttribute('required', 'true'); }
+      else { grupo.style.display = 'none'; select.removeAttribute('required'); select.value = ''; }
+    }
+
+    function calcularVencimientoCarne() {
+      const categoria = document.getElementById('add-categoria').value;
+      const estadoFisico = document.getElementById('add-estado-fisico').value;
+      const ubicacion = document.getElementById('add-ubicacion').value;
+      const inputFecha = document.getElementById('add-fecha');
+      if (categoria.includes('Carnes') && estadoFisico && ubicacion) {
+        let diasASumar = 0; const esFreezer = ubicacion.toLowerCase().includes('freezer');
+        if (esFreezer) {
+          if (estadoFisico.includes('Picada')) diasASumar = 120;
+          else if (estadoFisico.includes('Pieza Entera')) diasASumar = 240;
+          else if (estadoFisico.includes('Trozado')) diasASumar = 180;
+          else if (estadoFisico.includes('Filet')) diasASumar = 90;
+        } else {
+          if (estadoFisico.includes('Picada')) diasASumar = 2;
+          else if (estadoFisico.includes('Pieza Entera')) diasASumar = 5;
+          else if (estadoFisico.includes('Trozado')) diasASumar = 2;
+          else if (estadoFisico.includes('Filet')) diasASumar = 2;
+        }
+        if (diasASumar > 0) {
+          const fechaCalculada = new Date(); fechaCalculada.setDate(fechaCalculada.getDate() + diasASumar);
+          inputFecha.value = `${fechaCalculada.getFullYear()}-${String(fechaCalculada.getMonth() + 1).padStart(2, '0')}-${String(fechaCalculada.getDate()).padStart(2, '0')}`;
+          inputFecha.style.borderColor = 'var(--primary)'; inputFecha.style.backgroundColor = 'var(--primary-light)';
+          setTimeout(() => { inputFecha.style.borderColor = 'var(--border-color)'; inputFecha.style.backgroundColor = 'var(--bg-card)'; }, 1000);
+        }
+      }
+    }
+
+    async function handleAddAlimento(event) {
+      event.preventDefault();
+      const usuarioData = JSON.parse(localStorage.getItem('usuario'));
+      if (!usuarioData) { alert("Sesión expirada."); switchScreen('screen-login'); return; }
+      
+      const ubicacion = document.getElementById('add-ubicacion').value;
+      if (!ubicacion) { alert("Por favor seleccioná una ubicación."); return; }
+
+      try {
+        const respuesta = await fetch(`${API_URL}/alimentos`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            usuario_id: usuarioData.id, ubicacion: ubicacion,
+            nombre: document.getElementById('add-nombre').value,
+            marca: document.getElementById('add-marca').value,
+            categoria: document.getElementById('add-categoria').value,
+            estado_fisico: document.getElementById('add-estado-fisico').value,
+            cantidad: document.getElementById('add-cantidad').value,
+            unidad: document.getElementById('add-unidad').value,
+            fecha_vencimiento: document.getElementById('add-fecha').value
+          })
+        });
+        if (respuesta.ok) {
+          alert("¡Alimento guardado con éxito!");
+          event.target.reset(); document.getElementById('group-estado-fisico').style.display = 'none';
+          updateDashboardStats(); abrirLugar(ubicacion);
+        } else {
+          const data = await respuesta.json(); alert("Error: " + data.mensaje);
+        }
+      } catch (error) { console.error(error); }
+    }
+
+    // --- LÓGICA DE ALIMENTOS ODIADOS ---
+    let odiadosArray = [];
+
+    function addOdiado() {
+      const input = document.getElementById('input-odiado');
+      const val = input.value.trim();
+      
+      if (val !== '' && !odiadosArray.includes(val)) {
+        odiadosArray.push(val);
+        input.value = ''; 
+        renderOdiados();
+      }
+    }
+
+    function removeOdiado(itemABorrar) {
+      odiadosArray = odiadosArray.filter(item => item !== itemABorrar);
+      renderOdiados();
+    }
+
+    function renderOdiados() {
+      const contenedor = document.getElementById('lista-odiados');
+      contenedor.innerHTML = '';
+      
+      odiadosArray.forEach(item => {
+        contenedor.innerHTML += `
+          <span style="background: var(--danger); color: white; padding: 6px 12px; border-radius: 16px; font-size: 0.85rem; display: flex; align-items: center; gap: 6px;">
+            ${item} 
+            <i data-lucide="x" style="width: 14px; height: 14px; cursor: pointer;" onclick="removeOdiado('${item}')"></i>
+          </span>
+        `;
+      });
+      lucide.createIcons(); 
+    }
+
+    // --- ENVIAR EL PERFIL AL BACKEND ---
+    async function handleSaveProfile(event) {
+      event.preventDefault();
+      
+      const usuarioData = JSON.parse(localStorage.getItem('usuario'));
+      if (!usuarioData) {
+        alert("Sesión expirada.");
+        return switchScreen('screen-login');
+      }
+
+      const integrantes = document.getElementById('prof-integrantes').value;
+      const menores = document.getElementById('prof-menores').checked;
+      const dieta = document.getElementById('prof-dieta').value;
+      const alergias = document.getElementById('prof-alergias').value;
+      
+      const selectIntol = document.getElementById('prof-intolerancias');
+      const intolerancias = Array.from(selectIntol.selectedOptions).map(opt => opt.value).join(', ');
+      
+      const alimentos_odiados = odiadosArray.join(', ');
+
+      try {
+        const respuesta = await fetch(`${API_URL}/perfil`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            usuario_id: usuarioData.id,
+            cantidad_integrantes: parseInt(integrantes),
+            hay_menores: menores,
+            tipo_alimentacion: dieta,
+            alergias: alergias,
+            intolerancias: intolerancias,
+            alimentos_odiados: alimentos_odiados
+          })
+        });
+        
+        const data = await respuesta.json();
+        
+        if (respuesta.ok) {
+          alert("¡Perfil familiar actualizado con éxito!");
+          switchScreen('screen-account');
+        } else {
+          alert("Error: " + data.mensaje);
+        }
+      } catch (error) {
+        console.error("Error guardando perfil:", error);
+      }
+    }
+
+    async function loadProfile() {
+      const usuarioData = JSON.parse(localStorage.getItem('usuario'));
+      if (!usuarioData) return;
+      
+      try {
+        const respuesta = await fetch(`${API_URL}/perfil?usuario_id=${usuarioData.id}`);
+        const data = await respuesta.json();
+        
+        if (respuesta.ok) {
+          const perfil = data.perfil;
+          
+          // Llenamos los inputs básicos
+          document.getElementById('prof-integrantes').value = perfil.cantidad_integrantes;
+          document.getElementById('prof-menores').checked = perfil.hay_menores;
+          document.getElementById('prof-dieta').value = perfil.tipo_alimentacion;
+          document.getElementById('prof-alergias').value = perfil.alergias || '';
+          
+          // Llenamos el select múltiple de intolerancias
+          const selectIntol = document.getElementById('prof-intolerancias');
+          const intolArray = perfil.intolerancias ? perfil.intolerancias.split(', ') : [];
+          Array.from(selectIntol.options).forEach(opt => {
+            opt.selected = intolArray.includes(opt.value);
+          });
+          
+          // Llenamos la lista de odiados
+          odiadosArray = perfil.alimentos_odiados ? perfil.alimentos_odiados.split(', ').filter(item => item !== '') : [];
+          renderOdiados();
+        }
+      } catch (error) {
+        console.error("Error cargando perfil:", error);
+      }
+    }
+
+    // --- LÓGICA DE PESTAÑAS (CHAT / FAVORITOS) ---
+    function switchRecipeTab(tab) {
+      document.getElementById('tab-btn-chat').classList.remove('active');
+      document.getElementById('tab-btn-favs').classList.remove('active');
+      document.getElementById('tab-content-chat').classList.remove('active');
+      document.getElementById('tab-content-favs').classList.remove('active');
+
+      if (tab === 'chat') {
+        document.getElementById('tab-btn-chat').classList.add('active');
+        document.getElementById('tab-content-chat').classList.add('active');
+        cargarFiltrosChat();
+      } else {
+        document.getElementById('tab-btn-favs').classList.add('active');
+        document.getElementById('tab-content-favs').classList.add('active');
+      }
+    }
+
+    // --- ESTADO DEL CHAT ---
+    let chatPaso = 0; 
+
+    // --- ENVIAR MENSAJE A LA IA (REAL) ---
+    async function handleSendChatUI() {
+      const input = document.getElementById('chat-input');
+      const mensaje = input.value.trim();
+      if (mensaje === '') return;
+
+      const usuarioData = JSON.parse(localStorage.getItem('usuario'));
+      if (!usuarioData) return alert("Por favor, iniciá sesión.");
+
+      const chatContainer = document.getElementById('chat-messages');
+
+      // 1. Dibujar el mensaje del usuario
+      chatContainer.innerHTML += `<div class="msg-bubble msg-user">${mensaje}</div>`;
+      input.value = '';
+      chatContainer.scrollTop = chatContainer.scrollHeight;
+
+      // 2. Burbuja temporal de "Pensando"
+      const idCarga = 'loading-' + Date.now();
+      chatContainer.innerHTML += `
+        <div class="msg-bubble msg-ia" id="${idCarga}" style="color: var(--text-muted);">
+          👨‍🍳 El Chef está revisando tu inventario...
+        </div>
+      `;
+      chatContainer.scrollTop = chatContainer.scrollHeight;
+
+      // 3. Mandar los datos al Backend
+      try {
+        const respuesta = await fetch(`${API_URL}/chat`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            usuario_id: usuarioData.id,
+            mensaje: mensaje,
+            paso: chatPaso,
+            espacios: espaciosParaIA // Le pasamos la barrita de filtros
+          })
+        });
+        
+        const data = await respuesta.json();
+        document.getElementById(idCarga).remove(); // Borramos el "Pensando..."
+        
+        if (respuesta.ok) {
+          let extraHtml = '';
+          
+          // Si el paso era 1, significa que la IA nos acaba de dar la receta final.
+          // ¡Acá inyectamos el botón de Favoritos!
+          if (chatPaso === 1) {
+            // Escapamos comillas para no romper el HTML
+            const contenidoLimpio = data.respuesta.replace(/'/g, "&apos;").replace(/"/g, "&quot;");
+            extraHtml = `
+              <br><br><span style="font-size: 0.85rem; color: var(--text-muted);">¿Te gusta esta receta? Guardala:</span>
+              <div class="btn-like" onclick="toggleLike(this, 'Receta Guardada', '${contenidoLimpio}')">
+                <i data-lucide="heart" style="width: 16px; height: 16px;"></i>
+              </div>
+            `;
+          }
+
+          // Dibujamos la respuesta de Gemini
+          chatContainer.innerHTML += `
+            <div class="msg-bubble msg-ia">
+              ${data.respuesta}
+              ${extraHtml}
+            </div>
+          `;
+          
+          chatPaso = data.paso_siguiente; // Actualizamos el paso interno
+          lucide.createIcons();
+          chatContainer.scrollTop = chatContainer.scrollHeight;
+        } else {
+          alert("Error del Chef: " + data.mensaje);
+        }
+      } catch (error) {
+        document.getElementById(idCarga).remove();
+        console.error("Error conectando con la IA:", error);
+      }
+    }
+
+    // --- REINICIAR EL CHAT ---
+    function clearChat() {
+      const chatContainer = document.getElementById('chat-messages');
+      chatContainer.innerHTML = `
+        <div class="msg-bubble msg-ia">
+          ¡Hola! Soy tu Chef virtual. Ya revisé tu heladera y el perfil de tu familia. ¿Qué tenés ganas de comer hoy?
+        </div>
+      `;
+      chatPaso = 0; 
+      lucide.createIcons();
+    }
+
+    // --- SISTEMA DE LIKES Y GUARDADO DE RECETAS ---
+    let recetasFavoritas = []; 
+
+    function toggleLike(btnElement, titulo, contenido) {
+      const isLiked = btnElement.classList.contains('liked');
+      
+      if (!isLiked) {
+        btnElement.classList.add('liked');
+        recetasFavoritas.push({ titulo, contenido });
+      } else {
+        btnElement.classList.remove('liked');
+        recetasFavoritas = recetasFavoritas.filter(r => r.titulo !== titulo);
+      }
+      
+      renderFavoritos();
+    }
+
+    // --- LÓGICA DE FILTROS DE ESPACIO PARA LA IA ---
+    let espaciosParaIA = []; 
+
+    async function cargarFiltrosChat() {
+      const usuarioData = JSON.parse(localStorage.getItem('usuario'));
+      if (!usuarioData) return;
+      
+      try {
+        const respuesta = await fetch(`${API_URL}/lugares?usuario_id=${usuarioData.id}`);
+        const data = await respuesta.json();
+        
+        if (respuesta.ok) {
+          const contenedor = document.getElementById('chat-space-filters');
+          
+          let htmlFiltros = `<div class="filter-chip active" id="chip-todos" onclick="seleccionarTodosEspacios()">Todos</div>`;
+          
+          data.lugares.forEach(lugar => {
+            htmlFiltros += `<div class="filter-chip" id="chip-${lugar.id}" onclick="toggleEspacioChat('${lugar.nombre}', 'chip-${lugar.id}')">${lugar.nombre}</div>`;
+          });
+          
+          contenedor.innerHTML = htmlFiltros;
+          espaciosParaIA = []; 
+        }
+      } catch (error) {
+        console.error("Error cargando filtros del chat:", error);
+      }
+    }
+
+    function seleccionarTodosEspacios() {
+      espaciosParaIA = [];
+      document.querySelectorAll('.filter-chip').forEach(el => el.classList.remove('active'));
+      document.getElementById('chip-todos').classList.add('active');
+    }
+
+    function toggleEspacioChat(nombreLugar, chipId) {
+      const chip = document.getElementById(chipId);
+      const chipTodos = document.getElementById('chip-todos');
+      
+      if (espaciosParaIA.includes(nombreLugar)) {
+        espaciosParaIA = espaciosParaIA.filter(e => e !== nombreLugar);
+        chip.classList.remove('active');
+      } else {
+        espaciosParaIA.push(nombreLugar);
+        chip.classList.add('active');
+      }
+      
+      if (espaciosParaIA.length === 0) {
+        chipTodos.classList.add('active');
+      } else {
+        chipTodos.classList.remove('active');
+      }
+    }
+
+    function renderFavoritos() {
+      const contenedor = document.getElementById('lista-recetas-guardadas');
+      contenedor.innerHTML = '';
+
+      if (recetasFavoritas.length === 0) {
+        contenedor.innerHTML = '<p style="padding: 16px; text-align: center; color: var(--text-muted); font-size: 0.9rem;">No tenés recetas guardadas todavía.</p>';
+        return;
+      }
+
+      recetasFavoritas.forEach(receta => {
+        contenedor.innerHTML += `
+          <div class="list-item" onclick="abrirModalReceta('${receta.titulo}', '${receta.contenido}')">
+            <div class="emoji-icon" style="background: #fef2f2; color: var(--danger);">
+              <i data-lucide="heart" style="fill: currentColor;"></i>
+            </div>
+            <div class="item-text">
+              <h4>${receta.titulo}</h4>
+              <p>Guardada desde el Chat</p>
+            </div>
+            <i data-lucide="chevron-right" color="#cbd5e1"></i>
+          </div>
+        `;
+      });
+      lucide.createIcons();
+    }
+
+    // --- MODAL FLOTANTE ---
+    function abrirModalReceta(titulo, contenido) {
+      document.getElementById('modal-title').innerText = titulo;
+      document.getElementById('modal-body-content').innerHTML = contenido;
+      document.getElementById('recipe-modal').classList.add('active');
+    }
+
+    function closeModal() {
+      document.getElementById('recipe-modal').classList.remove('active');
+    }
+  </script>
+</body>
+</html>
