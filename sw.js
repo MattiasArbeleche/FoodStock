@@ -19,6 +19,9 @@ self.addEventListener('install', event => {
 
 // 2. Interceptamos las peticiones para que funcione rapidísimo (y sin internet)
 self.addEventListener('fetch', event => {
+  if (event.request.url.includes('pythonanywhere.com')) {
+    return; // Deja que el navegador haga la petición normalmente
+  }
   event.respondWith(
     caches.match(event.request)
       .then(response => {
