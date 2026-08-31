@@ -7,6 +7,7 @@
   <title>Food Stock</title>
   
   <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="manifest" href="manifest.json">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <script src="https://unpkg.com/lucide@latest"></script>
@@ -109,9 +110,81 @@
     .chat-filters::-webkit-scrollbar { display: none; }
     .filter-chip { padding: 6px 14px; border-radius: 20px; font-size: 0.85rem; font-weight: 500; cursor: pointer; border: 1px solid var(--border-color); background: var(--bg-card); color: var(--text-muted); white-space: nowrap; transition: all 0.2s; user-select: none; }
     .filter-chip.active { background: var(--primary-light); color: var(--primary-dark); border-color: var(--primary); }
+    /* --- NOTIFICACIONES TOAST --- */
+    .toast-container {
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      pointer-events: none; /* Para que no bloquee clics debajo */
+      width: 90%;
+      max-width: 400px;
+    }
+    .toast {
+      background: var(--text-main);
+      color: white;
+      padding: 14px 20px;
+      border-radius: 16px;
+      font-size: 0.95rem;
+      font-weight: 500;
+      box-shadow: var(--shadow-float);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      animation: slideDown 0.3s ease forwards;
+      pointer-events: auto;
+    }
+    .toast.success { background: var(--primary); }
+    .toast.error { background: var(--danger); }
+    .toast.fade-out { animation: fadeOut 0.3s ease forwards; }
+
+    @keyframes slideDown {
+      from { opacity: 0; transform: translateY(-20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes fadeOut {
+      to { opacity: 0; transform: translateY(-20px); }
+    }
+    /* --- MODAL DE CONFIRMACIÓN --- */
+    .confirm-overlay {
+      position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
+      background: rgba(15, 23, 42, 0.5); z-index: 10000; 
+      display: none; justify-content: center; align-items: center; 
+      backdrop-filter: blur(4px);
+    }
+    .confirm-overlay.active { display: flex; animation: fadeInModal 0.2s forwards; }
+    .confirm-box {
+      background: var(--bg-card); width: 85%; max-width: 320px; 
+      border-radius: 24px; padding: 24px; 
+      display: flex; flex-direction: column; align-items: center; text-align: center; 
+      box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); 
+      transform: scale(0.95); opacity: 0; animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+    }
+    @keyframes popIn { to { transform: scale(1); opacity: 1; } }
   </style>
 </head>
 <body>
+  <!-- MODAL DE CONFIRMACIÓN CUSTOM -->
+    <div class="confirm-overlay" id="confirm-modal">
+      <div class="confirm-box">
+        <div style="background: #fee2e2; color: var(--danger); width: 64px; height: 64px; border-radius: 50%; display: flex; justify-content: center; align-items: center; margin-bottom: 16px;">
+          <i data-lucide="alert-triangle" width="32" height="32"></i>
+        </div>
+        <h3 style="margin-bottom: 8px; color: var(--text-main); font-size: 1.2rem;">¿Estás seguro?</h3>
+        <p id="confirm-message" style="color: var(--text-muted); font-size: 0.95rem; margin-bottom: 24px; line-height: 1.5;"></p>
+        
+        <div style="display: flex; gap: 12px; width: 100%;">
+          <button onclick="cerrarConfirmacion()" style="flex: 1; padding: 14px; border-radius: 14px; border: 1px solid var(--border-color); background: var(--bg-card); color: var(--text-main); font-weight: 600; cursor: pointer; transition: background 0.2s;">Cancelar</button>
+          
+          <button onclick="ejecutarConfirmacion()" style="flex: 1; padding: 14px; border-radius: 14px; border: none; background: var(--danger); color: white; font-weight: 600; cursor: pointer; box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3); transition: transform 0.2s;">Sí, borrar</button>
+        </div>
+      </div>
+    </div>
+  <div id="toast-container" class="toast-container"></div>
 
   <div class="app-container">
 
@@ -228,9 +301,9 @@
       <div class="list-wrapper" id="storage-alimentos-list">
         <p style="padding: 16px; text-align: center; color: var(--text-muted); font-size: 0.9rem;">Cargando alimentos...</p>
       </div>
-      <button class="fab" onclick="switchScreen('screen-add')">
-        <i data-lucide="plus" width="28" height="28"></i>
-      </button>
+      <button class="fab" onclick="prepararAgregarAlimento()">
+          <i data-lucide="plus" width="28" height="28"></i>
+        </button>
     </main>
 
     <!-- AÑADIR ALIMENTO -->
@@ -242,7 +315,7 @@
       </div>
       <div style="padding: 24px;">
         <form onsubmit="handleAddAlimento(event)">
-          <div class="input-group">
+          <div class="input-group" id="grupo-ubicacion">
             <label>Ubicación *</label>
             <select id="add-ubicacion" required onchange="calcularVencimientoCarne()">
               <option value="">Cargando ubicaciones...</option>
@@ -321,7 +394,7 @@
       </div>
 
       <!-- CONTENIDO 1: EL CHAT -->
-      <div class="tab-content active" id="tab-content-chat" style="padding-bottom: 80px; display: flex; flex-direction: column;">
+      <div class="tab-content active" id="tab-content-chat" style="padding-bottom: 80px; flex-direction: column;">
         
         <div class="chat-container" id="chat-messages" style="flex: 1; padding-bottom: 16px;">
           <div class="msg-bubble msg-ia">
@@ -376,7 +449,7 @@
             <i data-lucide="chevron-right" color="#cbd5e1"></i>
           </div>
 
-          <div class="list-item" onclick="switchScreen('screen-login')" style="margin-top: 24px; border: 1px solid #fee2e2;">
+          <div class="list-item" onclick="cerrarSesion()" style="margin-top: 24px; border: 1px solid #fee2e2;">
             <i data-lucide="log-out" color="var(--danger)"></i>
             <div class="item-text"><h4 style="color: var(--danger);">Cerrar Sesión</h4></div>
           </div>
@@ -478,7 +551,36 @@
 
   <script>
     lucide.createIcons();
+    // --- REGISTRO DEL SERVICE WORKER PARA PWA ---
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js')
+          .then(registro => {
+            console.log('¡ServiceWorker registrado exitosamente!', registro.scope);
+          })
+          .catch(error => {
+            console.log('Error registrando el ServiceWorker:', error);
+          });
+      });
+    }
     const API_URL = 'https://MatiasArbeleche.pythonanywhere.com';
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const usuarioGuardado = localStorage.getItem('usuario');
+      
+      if (usuarioGuardado) {
+        // Si hay un usuario guardado, lo leemos
+        const usuarioData = JSON.parse(usuarioGuardado);
+        
+        // Actualizamos los textos de la interfaz
+        document.getElementById('home-greeting').innerText = `Hola, ${usuarioData.nombre.split(' ')[0]} 👋`;
+        document.getElementById('account-name').innerText = usuarioData.nombre;
+        
+        // Lo mandamos al inicio y cargamos sus cosas
+        switchScreen('screen-home');
+        loadLugares();
+      }
+    });
 
     // --- NAVEGACIÓN ---
     function switchScreen(screenId) {
@@ -608,13 +710,19 @@
           else { badgeColor = 'background: var(--primary-light); color: var(--primary-dark);'; badgeText = 'En fecha'; }
 
           listContainer.innerHTML += `
-            <div class="list-item">
-              <div class="emoji-icon">${emoji}</div>
-              <div class="item-text"><h4 style="text-transform: capitalize;">${alim.nombre}</h4><p>${textoDetalle}</p></div>
-              <span class="badge" style="${badgeColor}">${badgeText}</span>
-            </div>
-          `;
+                      <div class="list-item">
+                        <div class="emoji-icon">${emoji}</div>
+                        <div class="item-text"><h4 style="text-transform: capitalize;">${alim.nombre}</h4><p>${textoDetalle}</p></div>
+                        <span class="badge" style="${badgeColor}">${badgeText}</span>
+                        
+                        <!-- NUEVO BOTÓN DE BORRAR -->
+                        <button onclick="event.stopPropagation(); borrarAlimento(${alim.id}, '${nombreLugar}')" style="background: none; border: none; padding: 8px; cursor: pointer; color: var(--danger); margin-left: 8px; transition: transform 0.2s;">
+                          <i data-lucide="trash-2"></i>
+                        </button>
+                      </div>
+                    `;
         });
+        lucide.createIcons();
       } catch (error) { console.error("Error alimentos:", error); }
     }
 
@@ -648,7 +756,7 @@
       try {
         const respuesta = await fetch(`${API_URL}/registro`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, nombre_completo: nombre, username, password }) });
         const data = await respuesta.json();
-        if (respuesta.ok) { alert("¡Cuenta creada!"); switchScreen('screen-login'); }
+        if (respuesta.ok) { mostrarNotificacion("¡Cuenta creada!", "success"); switchScreen('screen-login'); }
         else { errorDiv.innerHTML = `<p style="color: var(--danger); font-size: 0.85rem; margin-top: 5px;">*${data.mensaje}*</p>`; }
       } catch (error) { errorDiv.innerHTML = `<p style="color: var(--danger); font-size: 0.85rem; margin-top: 5px;">*Error de conexión*</p>`; }
     }
@@ -661,8 +769,8 @@
       const usuarioData = JSON.parse(localStorage.getItem('usuario'));
       try {
         const respuesta = await fetch(`${API_URL}/lugares`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ usuario_id: usuarioData.id, nombre, tipo, subtipo }) });
-        if (respuesta.ok) { alert("¡Espacio creado!"); event.target.reset(); document.getElementById('group-subtipo').style.display = 'none'; switchScreen('screen-home'); loadLugares(); }
-        else { const data = await respuesta.json(); alert("Error: " + data.mensaje); }
+        if (respuesta.ok) { mostrarNotificacion("¡Espacio creado!", "success"); event.target.reset(); document.getElementById('group-subtipo').style.display = 'none'; switchScreen('screen-home'); loadLugares(); }
+        else { const data = await respuesta.json(); mostrarNotificacion("Error: " + data.mensaje, "error"); }
       } catch (error) { console.error(error); }
     }
 
@@ -702,10 +810,10 @@
     async function handleAddAlimento(event) {
       event.preventDefault();
       const usuarioData = JSON.parse(localStorage.getItem('usuario'));
-      if (!usuarioData) { alert("Sesión expirada."); switchScreen('screen-login'); return; }
+      if (!usuarioData) { mostrarNotificacion("Sesión expirada."); switchScreen('screen-login'); return; }
       
       const ubicacion = document.getElementById('add-ubicacion').value;
-      if (!ubicacion) { alert("Por favor seleccioná una ubicación."); return; }
+      if (!ubicacion) { mostrarNotificacion("Por favor seleccioná una ubicación."); return; }
 
       try {
         const respuesta = await fetch(`${API_URL}/alimentos`, {
@@ -723,14 +831,46 @@
           })
         });
         if (respuesta.ok) {
-          alert("¡Alimento guardado con éxito!");
+          mostrarNotificacion("¡Alimento guardado con éxito!", "success");
           event.target.reset(); document.getElementById('group-estado-fisico').style.display = 'none';
           updateDashboardStats(); abrirLugar(ubicacion);
         } else {
-          const data = await respuesta.json(); alert("Error: " + data.mensaje);
+          const data = await respuesta.json(); mostrarNotificacion("Error: " + data.mensaje, "error");
         }
       } catch (error) { console.error(error); }
     }
+
+    function prepararAgregarAlimento() {
+      // 1. Leemos el nombre del lugar actual desde el título de la pantalla
+      const lugarActual = document.getElementById('storage-title').innerText;
+      
+      // 2. Seleccionamos automáticamente ese lugar en el formulario
+      const selectUbicacion = document.getElementById('add-ubicacion');
+      selectUbicacion.value = lugarActual;
+      
+      // 3. Ocultamos el div para que el usuario no lo vea
+      document.getElementById('grupo-ubicacion').style.display = 'none';
+      
+      // 4. Cambiamos a la pantalla de agregar alimento
+      switchScreen('screen-add');
+    }
+      function borrarAlimento(idAlimento, nombreLugar) {
+        mostrarConfirmacion("¿Seguro que querés borrar este alimento del inventario?", async () => {
+          try {
+            const respuesta = await fetch(`${API_URL}/alimentos/${idAlimento}`, { method: 'DELETE' });
+            if (respuesta.ok) {
+              mostrarNotificacion("Alimento eliminado", "success");
+              loadAlimentos(nombreLugar);
+              updateDashboardStats();
+            } else {
+              const data = await respuesta.json();
+              mostrarNotificacion("Error: " + data.mensaje, "error");
+            }
+          } catch (error) { 
+            console.error("Error borrando alimento:", error); 
+          }
+        });
+      }
 
     // --- LÓGICA DE ALIMENTOS ODIADOS ---
     let odiadosArray = [];
@@ -772,7 +912,7 @@
       
       const usuarioData = JSON.parse(localStorage.getItem('usuario'));
       if (!usuarioData) {
-        alert("Sesión expirada.");
+        mostrarNotificacion("Sesión expirada.");
         return switchScreen('screen-login');
       }
 
@@ -804,10 +944,10 @@
         const data = await respuesta.json();
         
         if (respuesta.ok) {
-          alert("¡Perfil familiar actualizado con éxito!");
+          mostrarNotificacion("¡Perfil familiar actualizado con éxito!", "success");
           switchScreen('screen-account');
         } else {
-          alert("Error: " + data.mensaje);
+          mostrarNotificacion("Error: " + data.mensaje, "error");
         }
       } catch (error) {
         console.error("Error guardando perfil:", error);
@@ -861,6 +1001,7 @@
       } else {
         document.getElementById('tab-btn-favs').classList.add('active');
         document.getElementById('tab-content-favs').classList.add('active');
+        renderFavoritos();
       }
     }
 
@@ -874,7 +1015,7 @@
       if (mensaje === '') return;
 
       const usuarioData = JSON.parse(localStorage.getItem('usuario'));
-      if (!usuarioData) return alert("Por favor, iniciá sesión.");
+      if (!usuarioData) return mostrarNotificacion("Por favor, iniciá sesión.");
 
       const chatContainer = document.getElementById('chat-messages');
 
@@ -936,7 +1077,7 @@
           lucide.createIcons();
           chatContainer.scrollTop = chatContainer.scrollHeight;
         } else {
-          alert("Error del Chef: " + data.mensaje);
+          mostrarNotificacion("Error del Chef: " + data.mensaje, "error");
         }
       } catch (error) {
         document.getElementById(idCarga).remove();
@@ -957,21 +1098,93 @@
     }
 
     // --- SISTEMA DE LIKES Y GUARDADO DE RECETAS ---
-    let recetasFavoritas = []; 
+    // --- SISTEMA DE GUARDADO DE RECETAS EN BASE DE DATOS ---
 
-    function toggleLike(btnElement, titulo, contenido) {
-      const isLiked = btnElement.classList.contains('liked');
+async function toggleLike(btnElement, titulo, contenido) {
+  const usuarioData = JSON.parse(localStorage.getItem('usuario'));
+  if (!usuarioData) return mostrarNotificacion("Iniciá sesión para guardar recetas.", "error");
+
+  const isLiked = btnElement.classList.contains('liked');
+
+  if (!isLiked) {
+    try {
+      const respuesta = await fetch(`${API_URL}/recetas`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ usuario_id: usuarioData.id, titulo: titulo, contenido: contenido })
+      });
       
-      if (!isLiked) {
+      if (respuesta.ok) {
         btnElement.classList.add('liked');
-        recetasFavoritas.push({ titulo, contenido });
-      } else {
-        btnElement.classList.remove('liked');
-        recetasFavoritas = recetasFavoritas.filter(r => r.titulo !== titulo);
+        // Visualmente avisamos que se guardó
+        btnElement.innerHTML = '<i data-lucide="check" style="width: 16px; height: 16px; color: var(--primary);"></i>';
+        lucide.createIcons();
       }
-      
-      renderFavoritos();
+    } catch (error) { console.error("Error guardando receta:", error); }
+  }
+}
+
+async function renderFavoritos() {
+  const usuarioData = JSON.parse(localStorage.getItem('usuario'));
+  if (!usuarioData) return;
+
+  const contenedor = document.getElementById('lista-recetas-guardadas');
+  contenedor.innerHTML = '<p style="padding: 16px; text-align: center; color: var(--text-muted); font-size: 0.9rem;">Cargando tus recetas...</p>';
+
+  try {
+    const respuesta = await fetch(`${API_URL}/recetas?usuario_id=${usuarioData.id}`);
+    const data = await respuesta.json();
+
+    contenedor.innerHTML = '';
+    if (data.recetas.length === 0) {
+      contenedor.innerHTML = '<p style="padding: 16px; text-align: center; color: var(--text-muted); font-size: 0.9rem;">No tenés recetas guardadas todavía.</p>';
+      return;
     }
+
+    data.recetas.forEach(receta => {
+      // Escapamos las comillas para que no se rompa el HTML al abrir el modal
+      const contenidoLimpio = receta.contenido.replace(/'/g, "&apos;").replace(/"/g, "&quot;");
+      
+      // Agregamos el ícono de tacho de basura para eliminar la receta
+      contenedor.innerHTML += `
+        <div class="list-item" onclick="abrirModalReceta('${receta.titulo}', '${contenidoLimpio}')">
+          <div class="emoji-icon" style="background: #fef2f2; color: var(--danger);">
+            <i data-lucide="heart" style="fill: currentColor;"></i>
+          </div>
+          <div class="item-text">
+            <h4>${receta.titulo}</h4>
+            <p>Guardada desde el Chat</p>
+          </div>
+          <button onclick="event.stopPropagation(); borrarReceta(${receta.id})" style="background: none; border: none; padding: 8px; cursor: pointer; color: var(--danger);">
+            <i data-lucide="trash-2"></i>
+          </button>
+        </div>
+      `;
+    });
+    lucide.createIcons();
+  } catch (error) {
+    console.error("Error obteniendo recetas:", error);
+  }
+}
+
+function borrarReceta(idReceta) {
+  mostrarConfirmacion("¿Querés borrar esta receta guardada?", async () => {
+    try {
+      const respuesta = await fetch(`${API_URL}/recetas/${idReceta}`, { method: 'DELETE' });
+      
+      if (respuesta.ok) {
+        mostrarNotificacion("Receta eliminada", "success");
+        renderFavoritos(); // Volvemos a cargar la lista actualizada
+      } else {
+        const data = await respuesta.json();
+        mostrarNotificacion("Error: " + data.mensaje, "error");
+      }
+    } catch (error) { 
+      console.error("Error borrando receta:", error);
+      mostrarNotificacion("Error de conexión", "error");
+    }
+  });
+}
 
     // --- LÓGICA DE FILTROS DE ESPACIO PARA LA IA ---
     let espaciosParaIA = []; 
@@ -1061,6 +1274,54 @@
 
     function closeModal() {
       document.getElementById('recipe-modal').classList.remove('active');
+    }
+
+    function cerrarSesion() {
+      localStorage.removeItem('usuario'); // Borramos los datos del navegador
+      document.getElementById('login-identificador').value = ''; // Limpiamos el formulario
+      document.getElementById('login-password').value = '';
+      switchScreen('screen-login'); // Volvemos al login
+    }
+
+    // --- SISTEMA DE NOTIFICACIONES ---
+    function mostrarNotificacion(mensaje, tipo = 'success') {
+      const container = document.getElementById('toast-container');
+      if (!container) return;
+      
+      const toast = document.createElement('div');
+      toast.className = `toast ${tipo}`;
+      
+      // Elegimos el ícono dependiendo de si es éxito o error
+      const icono = tipo === 'success' ? '<i data-lucide="check-circle" style="color: white;"></i>' : '<i data-lucide="alert-circle" style="color: white;"></i>';
+      
+      toast.innerHTML = `${icono} <span>${mensaje}</span>`;
+      container.appendChild(toast);
+      lucide.createIcons();
+      
+      // A los 3 segundos, iniciamos la animación de salida y lo borramos
+      setTimeout(() => {
+        toast.classList.add('fade-out');
+        setTimeout(() => toast.remove(), 300); // Espera a que termine la animación
+      }, 3000);
+    }
+    // --- SISTEMA DE CONFIRMACIÓN CUSTOM ---
+    let accionConfirmadaActual = null;
+
+    function mostrarConfirmacion(mensaje, callback) {
+      document.getElementById('confirm-message').innerText = mensaje;
+      document.getElementById('confirm-modal').classList.add('active');
+      accionConfirmadaActual = callback; // Guardamos lo que hay que hacer si el usuario dice "Sí"
+      lucide.createIcons();
+    }
+
+    function cerrarConfirmacion() {
+      document.getElementById('confirm-modal').classList.remove('active');
+      accionConfirmadaActual = null;
+    }
+
+    function ejecutarConfirmacion() {
+      if (accionConfirmadaActual) accionConfirmadaActual();
+      cerrarConfirmacion();
     }
   </script>
 </body>
