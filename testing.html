@@ -192,6 +192,17 @@
       </div>
     </div>
   </div>
+
+  <div class="confirm-overlay" id="confirm-modal">
+  <div class="confirm-box">
+    <h3 style="margin-bottom: 8px; color: var(--text-main); font-size: 1.2rem;">Confirmación</h3>
+    <p id="confirm-message" style="color: var(--text-muted); font-size: 0.95rem; margin-bottom: 24px; line-height: 1.5;"></p>
+    <div style="display: flex; flex-direction: column; gap: 12px; width: 100%;">
+      <button onclick="ejecutarConfirmacion()" style="padding: 14px; border-radius: 14px; border: none; background: var(--danger); color: white; font-weight: 600; cursor: pointer;">Sí, confirmar</button>
+      <button onclick="cerrarConfirmacion()" style="padding: 14px; border-radius: 14px; border: none; background: transparent; color: var(--text-muted); font-weight: 600; cursor: pointer;">Cancelar</button>
+    </div>
+  </div>
+</div>  
   <div id="toast-container" class="toast-container"></div>
 
   <div class="app-container">
@@ -265,6 +276,9 @@
           <canvas id="statsChart"></canvas>
         </div>
       </div>
+      <button class="btn-primary" onclick="abrirPantallaEstadisticas()" style="margin: 0 24px 24px; width: calc(100% - 48px); background: var(--bg-card); color: var(--primary); border: 1px solid var(--primary); box-shadow: none;">
+        Ver Reporte Completo <i data-lucide="bar-chart-2" style="display: inline-block; vertical-align: middle; margin-left: 8px; width: 18px;"></i>
+      </button>
 
       <h3 class="section-title" style="display: flex; justify-content: space-between; align-items: center;">
         Espacios de Guardado
@@ -275,6 +289,39 @@
         <p style="padding: 16px; text-align: center; color: var(--text-muted); font-size: 0.9rem;">Cargando espacios...</p>
       </div>
     </main>
+
+    <main class="screen" id="screen-analytics">
+  <div class="header-bar">
+    <button class="btn-icon" onclick="switchScreen('screen-home')"><i data-lucide="chevron-left"></i></button>
+    <h2 class="header-title">Métricas</h2>
+    <div style="width: 44px;"></div>
+  </div>
+  
+  <div style="padding: 24px;">
+    <!-- Selector de tiempo -->
+    <div class="input-group">
+      <select id="filtro-tiempo" onchange="cargarEstadisticasAvanzadas()">
+        <option value="semana">Últimos 7 días</option>
+        <option value="mes" selected>Últimos 30 días</option>
+        <option value="todo">Histórico completo</option>
+      </select>
+    </div>
+
+    <!-- Gráfico de Evolución en el tiempo -->
+    <h3 class="section-title" style="padding: 0; margin-top: 16px;">Evolución de Consumo</h3>
+    <div class="chart-container" style="background: var(--bg-card); padding: 16px; border-radius: 16px; border: 1px solid var(--border-color); margin-bottom: 24px; box-shadow: var(--shadow-sm);">
+      <canvas id="chartEvolucion" style="width: 100%; height: 200px;"></canvas>
+    </div>
+
+    <!-- Gráfico de Categorías -->
+    <h3 class="section-title" style="padding: 0;">Stock por Categoría (%)</h3>
+    <div class="chart-container" style="background: var(--bg-card); padding: 16px; border-radius: 16px; border: 1px solid var(--border-color); margin-bottom: 24px; box-shadow: var(--shadow-sm); display: flex; justify-content: center;">
+      <div style="position: relative; width: 100%; max-width: 250px; aspect-ratio: 1 / 1;">
+        <canvas id="chartCategorias"></canvas>
+      </div>
+    </div>
+  </div>
+</main>
 
     <!-- AÑADIR ESPACIO -->
     <main class="screen" id="screen-add-space">
@@ -331,9 +378,11 @@
       </div>
       <div style="padding: 24px;">
         <form onsubmit="handleAddAlimento(event)">
+          <input type="hidden" id="edit-alimento-id" value="">
+            <h3 id="form-alimento-titulo" style="margin-bottom: 16px; color: var(--text-main);">Añadir Alimento</h3>
           <div class="input-group" id="grupo-ubicacion">
             <label>Ubicación *</label>
-            <select id="add-ubicacion" onchange="calcularVencimientoCarne()">
+            <select id="add-ubicacion" required onchange="calcularVencimientoCarne()">
               <option value="">Cargando ubicaciones...</option>
             </select>
           </div>
@@ -628,12 +677,6 @@
       lucide.createIcons();
     }
 
-    function abrirLugar(nombreLugar) {
-      document.getElementById('storage-title').innerText = nombreLugar;
-      loadAlimentos(nombreLugar);
-      switchScreen('screen-storage');
-    }
-
     // --- DASHBOARD (INICIO) ---
     async function updateDashboardStats() {
       const usuarioData = JSON.parse(localStorage.getItem('usuario'));
@@ -726,92 +769,118 @@ async function renderGraficos() {
 }   
 
     // --- CARGAR ESPACIOS ---
-    async function loadLugares() {
-      const usuarioData = JSON.parse(localStorage.getItem('usuario'));
-      if (!usuarioData) return;
-      try {
-        const respuesta = await fetch(`${API_URL}/lugares?usuario_id=${usuarioData.id}`);
-        const data = await respuesta.json();
-        if (respuesta.ok) {
-          const listContainer = document.getElementById('home-lugares-list');
-          const selectUbicacion = document.getElementById('add-ubicacion');
-          listContainer.innerHTML = ''; selectUbicacion.innerHTML = '<option value="">Seleccionar ubicación...</option>';
-          if (data.lugares.length === 0) {
-            listContainer.innerHTML = '<p style="padding: 16px; text-align: center; color: var(--text-muted); font-size: 0.9rem;">No tenés espacios creados. ¡Agregá uno para empezar!</p>';
-            return;
-          }
-          data.lugares.forEach(lugar => {
-            let emoji = lugar.tipo === 'Heladera' ? '🧊' : (lugar.tipo === 'Freezer' ? '❄️' : '🥫');
-            listContainer.innerHTML += `
-              <div class="list-item" onclick="abrirLugar('${lugar.nombre}')">
-                <div class="emoji-icon">${emoji}</div>
-                <div class="item-text"><h4>${lugar.nombre}</h4><p>${lugar.tipo === 'Otro' ? lugar.subtipo : lugar.tipo}</p></div>
-                <i data-lucide="chevron-right" color="#cbd5e1"></i>
-              </div>
-            `;
-            selectUbicacion.innerHTML += `<option value="${lugar.nombre}">${lugar.nombre}</option>`;
-          });
-          lucide.createIcons();
-        }
-        updateDashboardStats();
-        renderGraficos();
-      } catch (error) { console.error("Error lugares:", error); }
+    // --- VARIABLES GLOBALES NUEVAS ---
+let lugarActualId = null;
+let lugarActualNombre = '';
+let listaAlimentosActual = []; // Guardamos los alimentos en memoria para poder editarlos
+
+// --- FUNCIONES ACTUALIZADAS ---
+async function loadLugares() {
+  const usuarioData = JSON.parse(localStorage.getItem('usuario'));
+  if (!usuarioData) return;
+  try {
+    const respuesta = await fetch(`${API_URL}/lugares?usuario_id=${usuarioData.id}`);
+    const data = await respuesta.json();
+    if (respuesta.ok) {
+      const listContainer = document.getElementById('home-lugares-list');
+      const selectUbicacion = document.getElementById('add-ubicacion');
+      listContainer.innerHTML = ''; 
+      selectUbicacion.innerHTML = '<option value="">Seleccionar ubicación...</option>';
+      
+      if (data.lugares.length === 0) {
+        listContainer.innerHTML = '<p style="padding: 16px; text-align: center; color: var(--text-muted); font-size: 0.9rem;">No tenés espacios creados. ¡Agregá uno para empezar!</p>';
+        return;
+      }
+      data.lugares.forEach(lugar => {
+        let emoji = lugar.tipo === 'Heladera' ? '🧊' : (lugar.tipo === 'Freezer' ? '❄️' : '🥫');
+        listContainer.innerHTML += `
+          <div class="list-item" onclick="abrirLugar(${lugar.id}, '${lugar.nombre}')">
+            <div class="emoji-icon">${emoji}</div>
+            <div class="item-text"><h4>${lugar.nombre}</h4><p>${lugar.tipo === 'Otro' ? lugar.subtipo : lugar.tipo}</p></div>
+            <i data-lucide="chevron-right" color="#cbd5e1"></i>
+          </div>
+        `;
+        // ACÁ CAMBIAMOS PARA QUE EL VALUE SEA EL ID
+        selectUbicacion.innerHTML += `<option value="${lugar.id}">${lugar.nombre}</option>`;
+      });
+      lucide.createIcons();
     }
+  } catch (error) { console.error("Error lugares:", error); }
+}
 
-    // --- CARGAR ALIMENTOS (CON SEMÁFORO) ---
-    async function loadAlimentos(nombreLugar) {
-      const usuarioData = JSON.parse(localStorage.getItem('usuario'));
-      if (!usuarioData) return;
-      try {
-        const respuesta = await fetch(`${API_URL}/alimentos?usuario_id=${usuarioData.id}&lugar=${nombreLugar}`);
-        const data = await respuesta.json();
-        const listContainer = document.getElementById('storage-alimentos-list');
-        listContainer.innerHTML = '';
-        if (data.alimentos.length === 0) {
-          listContainer.innerHTML = '<p style="padding: 16px; text-align: center; color: var(--text-muted); font-size: 0.9rem;">No hay alimentos acá todavía.</p>';
-          return;
-        }
-        data.alimentos.forEach(alim => {
-          let emoji = '📦';
-          if(alim.categoria.includes('Lácteos')) emoji = '🥛';
-          if(alim.categoria.includes('Carnes')) emoji = '🥩';
-          if(alim.categoria.includes('Verduras')) emoji = '🥗';
-          if(alim.categoria.includes('Frutas')) emoji = '🍎';
-          if(alim.categoria.includes('Bebidas')) emoji = '🥤';
-          if(alim.categoria.includes('Despensa')) emoji = '🍝';
-          if(alim.categoria.includes('Dulces')) emoji = '🍫';
+function abrirLugar(idLugar, nombreLugar) {
+  lugarActualId = idLugar;
+  lugarActualNombre = nombreLugar;
+  document.getElementById('storage-title').innerText = nombreLugar;
+  loadAlimentos();
+  switchScreen('screen-storage');
+}
 
-          let textoDetalle = '';
-          if (alim.marca) textoDetalle += `${alim.marca} • `;
-          textoDetalle += `${alim.cantidad} ${alim.unidad}`;
-          if (alim.estado_fisico) textoDetalle += ` • ${alim.estado_fisico}`;
-
-          const hoy = new Date(); hoy.setHours(0, 0, 0, 0);
-          const fechaVenc = new Date(alim.fecha_vencimiento + 'T00:00:00');
-          const difDias = Math.ceil((fechaVenc.getTime() - hoy.getTime()) / (1000 * 60 * 60 * 24));
-
-          let badgeColor = ''; let badgeText = '';
-          if (difDias < 0) { badgeColor = 'background: #1e293b; color: #f8fafc;'; badgeText = '¡Vencido!'; }
-          else if (difDias <= 1) { badgeColor = 'background: #fee2e2; color: #ef4444;'; badgeText = difDias === 0 ? 'Vence hoy' : 'Vence mañana'; }
-          else if (difDias <= 3) { badgeColor = 'background: #ffedd5; color: #f97316;'; badgeText = `Vence en ${difDias} días`; }
-          else { badgeColor = 'background: var(--primary-light); color: var(--primary-dark);'; badgeText = 'En fecha'; }
-
-          listContainer.innerHTML += `
-                      <div class="list-item">
-                        <div class="emoji-icon">${emoji}</div>
-                        <div class="item-text"><h4 style="text-transform: capitalize;">${alim.nombre}</h4><p>${textoDetalle}</p></div>
-                        <span class="badge" style="${badgeColor}">${badgeText}</span>
-                        
-                        <!-- NUEVO BOTÓN DE BORRAR -->
-                        <button onclick="event.stopPropagation(); borrarAlimento(${alim.id}, '${nombreLugar}')" style="background: none; border: none; padding: 8px; cursor: pointer; color: var(--danger); margin-left: 8px; transition: transform 0.2s;">
-                          <i data-lucide="trash-2"></i>
-                        </button>
-                      </div>
-                    `;
-        });
-        lucide.createIcons();
-      } catch (error) { console.error("Error alimentos:", error); }
+async function loadAlimentos() {
+  if (!lugarActualId) return;
+  const usuarioData = JSON.parse(localStorage.getItem('usuario'));
+  try {
+    // AHORA BUSCAMOS POR LUGAR_ID
+    const respuesta = await fetch(`${API_URL}/alimentos?usuario_id=${usuarioData.id}&lugar_id=${lugarActualId}`);
+    const data = await respuesta.json();
+    const listContainer = document.getElementById('storage-alimentos-list');
+    listContainer.innerHTML = '';
+    
+    if (data.alimentos.length === 0) {
+      listContainer.innerHTML = '<p style="padding: 16px; text-align: center; color: var(--text-muted); font-size: 0.9rem;">No hay alimentos acá todavía.</p>';
+      listaAlimentosActual = [];
+      return;
     }
+    
+    listaAlimentosActual = data.alimentos; // Guardamos en memoria
+    
+    data.alimentos.forEach(alim => {
+      let emoji = '📦';
+      if(alim.categoria.includes('Lácteos')) emoji = '🥛';
+      if(alim.categoria.includes('Carnes')) emoji = '🥩';
+      if(alim.categoria.includes('Verduras')) emoji = '🥗';
+      if(alim.categoria.includes('Frutas')) emoji = '🍎';
+      if(alim.categoria.includes('Bebidas')) emoji = '🥤';
+      if(alim.categoria.includes('Despensa')) emoji = '🍝';
+      if(alim.categoria.includes('Dulces')) emoji = '🍫';
+
+      let textoDetalle = '';
+      if (alim.marca) textoDetalle += `${alim.marca} • `;
+      textoDetalle += `${alim.cantidad} ${alim.unidad}`;
+      if (alim.estado_fisico) textoDetalle += ` • ${alim.estado_fisico}`;
+
+      const hoy = new Date(); hoy.setHours(0, 0, 0, 0);
+      const fechaVenc = new Date(alim.fecha_vencimiento + 'T00:00:00');
+      const difDias = Math.ceil((fechaVenc.getTime() - hoy.getTime()) / (1000 * 60 * 60 * 24));
+
+      let badgeColor = ''; let badgeText = '';
+      if (difDias < 0) { badgeColor = 'background: #1e293b; color: #f8fafc;'; badgeText = '¡Vencido!'; }
+      else if (difDias <= 1) { badgeColor = 'background: #fee2e2; color: #ef4444;'; badgeText = difDias === 0 ? 'Vence hoy' : 'Vence mañana'; }
+      else if (difDias <= 3) { badgeColor = 'background: #ffedd5; color: #f97316;'; badgeText = `Vence en ${difDias} días`; }
+      else { badgeColor = 'background: var(--primary-light); color: var(--primary-dark);'; badgeText = 'En fecha'; }
+
+      listContainer.innerHTML += `
+        <div class="list-item">
+          <div class="emoji-icon">${emoji}</div>
+          <div class="item-text"><h4 style="text-transform: capitalize;">${alim.nombre}</h4><p>${textoDetalle}</p></div>
+          <span class="badge" style="${badgeColor}">${badgeText}</span>
+          
+          <div style="display:flex; flex-direction:column; gap:4px; margin-left: 8px;">
+            <!-- BOTÓN EDITAR (NUEVO) -->
+            <button onclick="event.stopPropagation(); prepararEditarAlimento(${alim.id})" style="background: none; border: none; padding: 4px; cursor: pointer; color: var(--primary); transition: transform 0.2s;">
+              <i data-lucide="pencil" style="width: 18px; height: 18px;"></i>
+            </button>
+            <!-- BOTÓN BORRAR -->
+            <button onclick="event.stopPropagation(); borrarAlimento(${alim.id}, '${lugarActualNombre}')" style="background: none; border: none; padding: 4px; cursor: pointer; color: var(--danger); transition: transform 0.2s;">
+              <i data-lucide="trash-2" style="width: 18px; height: 18px;"></i>
+            </button>
+          </div>
+        </div>
+      `;
+    });
+    lucide.createIcons();
+  } catch (error) { console.error("Error alimentos:", error); }
+}
 
     // --- FORMULARIOS ---
     async function handleLogin(event) {
@@ -894,54 +963,98 @@ async function renderGraficos() {
       }
     }
 
-    async function handleAddAlimento(event) {
-      event.preventDefault();
-      const usuarioData = JSON.parse(localStorage.getItem('usuario'));
-      if (!usuarioData) { mostrarNotificacion("Sesión expirada."); switchScreen('screen-login'); return; }
-      
-      const ubicacion = document.getElementById('add-ubicacion').value;
-      if (!ubicacion) { mostrarNotificacion("Por favor seleccioná una ubicación."); return; }
+function prepararAgregarAlimento() {
+  document.getElementById('edit-alimento-id').value = '';
+  document.getElementById('form-alimento-titulo').innerText = 'Añadir Alimento';
+  document.getElementById('grupo-ubicacion').style.display = 'none'; // Lo ocultamos porque ya sabemos dónde estamos
+  
+  // Limpiamos el formulario manualmente o con reset
+  document.getElementById('add-nombre').value = '';
+  document.getElementById('add-marca').value = '';
+  document.getElementById('add-categoria').value = '';
+  document.getElementById('add-estado-fisico').value = '';
+  document.getElementById('add-cantidad').value = '';
+  document.getElementById('add-unidad').value = 'g';
+  document.getElementById('add-fecha').value = '';
+  document.getElementById('group-estado-fisico').style.display = 'none';
+  
+  const selectUbicacion = document.getElementById('add-ubicacion');
+  selectUbicacion.value = lugarActualId; // Asignamos el ID
+  
+  switchScreen('screen-add');
+}
 
-      try {
-        const respuesta = await fetch(`${API_URL}/alimentos`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            usuario_id: usuarioData.id, ubicacion: ubicacion,
-            nombre: document.getElementById('add-nombre').value,
-            marca: document.getElementById('add-marca').value,
-            categoria: document.getElementById('add-categoria').value,
-            estado_fisico: document.getElementById('add-estado-fisico').value,
-            cantidad: document.getElementById('add-cantidad').value,
-            unidad: document.getElementById('add-unidad').value,
-            fecha_vencimiento: document.getElementById('add-fecha').value
-          })
-        });
-        if (respuesta.ok) {
-          mostrarNotificacion("¡Alimento guardado con éxito!", "success");
-          event.target.reset(); document.getElementById('group-estado-fisico').style.display = 'none';
-          updateDashboardStats(); abrirLugar(ubicacion);
-        } else {
-          const data = await respuesta.json(); mostrarNotificacion("Error: " + data.mensaje, "error");
-        }
-      } catch (error) { console.error(error); }
-    }
+function prepararEditarAlimento(idAlimento) {
+  // Buscamos el alimento en la memoria
+  const alimento = listaAlimentosActual.find(a => a.id === idAlimento);
+  if (!alimento) return;
 
-    function prepararAgregarAlimento() {
-      // 1. Leemos el nombre del lugar actual desde el título de la pantalla
-      const lugarActual = document.getElementById('storage-title').innerText;
+  document.getElementById('edit-alimento-id').value = alimento.id;
+  document.getElementById('form-alimento-titulo').innerText = 'Editar Alimento';
+  document.getElementById('grupo-ubicacion').style.display = 'flex'; // Le dejamos cambiar de lugar si quiere
+
+  document.getElementById('add-ubicacion').value = alimento.lugar_id;
+  document.getElementById('add-nombre').value = alimento.nombre;
+  document.getElementById('add-marca').value = alimento.marca || '';
+  document.getElementById('add-categoria').value = alimento.categoria;
+  
+  toggleEstadoFisico(alimento.categoria);
+  if(alimento.estado_fisico) document.getElementById('add-estado-fisico').value = alimento.estado_fisico;
+  
+  document.getElementById('add-cantidad').value = alimento.cantidad;
+  document.getElementById('add-unidad').value = alimento.unidad;
+  document.getElementById('add-fecha').value = alimento.fecha_vencimiento;
+
+  switchScreen('screen-add');
+}
+
+async function handleAddAlimento(event) {
+  event.preventDefault();
+  const usuarioData = JSON.parse(localStorage.getItem('usuario'));
+  if (!usuarioData) { mostrarNotificacion("Sesión expirada."); switchScreen('screen-login'); return; }
+  
+  const ubicacionId = document.getElementById('add-ubicacion').value;
+  if (!ubicacionId) { mostrarNotificacion("Por favor seleccioná una ubicación."); return; }
+
+  const alimentoId = document.getElementById('edit-alimento-id').value; // Vemos si hay ID
+  const esEdicion = alimentoId !== '';
+
+  const bodyData = {
+    usuario_id: usuarioData.id,
+    lugar_id: ubicacionId, // Mandamos el ID, no el nombre
+    nombre: document.getElementById('add-nombre').value,
+    marca: document.getElementById('add-marca').value,
+    categoria: document.getElementById('add-categoria').value,
+    estado_fisico: document.getElementById('add-estado-fisico').value,
+    cantidad: document.getElementById('add-cantidad').value,
+    unidad: document.getElementById('add-unidad').value,
+    fecha_vencimiento: document.getElementById('add-fecha').value
+  };
+
+  try {
+    const url = esEdicion ? `${API_URL}/alimentos/${alimentoId}` : `${API_URL}/alimentos`;
+    const metodo = esEdicion ? 'PUT' : 'POST';
+
+    const respuesta = await fetch(url, {
+      method: metodo,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(bodyData)
+    });
+    
+    if (respuesta.ok) {
+      mostrarNotificacion(esEdicion ? "¡Alimento actualizado!" : "¡Alimento guardado con éxito!", "success");
+      event.target.reset(); 
+      document.getElementById('group-estado-fisico').style.display = 'none';
       
-      // 2. Seleccionamos automáticamente ese lugar en el formulario
-      const selectUbicacion = document.getElementById('add-ubicacion');
-      selectUbicacion.value = lugarActual;
-      
-      // 3. Ocultamos el div para que el usuario no lo vea
-      document.getElementById('grupo-ubicacion').style.display = 'none';
-      
-      // 4. Cambiamos a la pantalla de agregar alimento
-      switchScreen('screen-add');
+      updateDashboardStats(); 
+      loadAlimentos(); // Recarga la lista del lugar actual
+      switchScreen('screen-storage'); // Volvemos a la lista
+    } else {
+      const data = await respuesta.json(); mostrarNotificacion("Error: " + data.mensaje, "error");
     }
-// Variables globales para guardar qué estamos borrando
+  } catch (error) { console.error(error); }
+}
+
 let alimentoAResolver = null;
 let lugarAlimentoAResolver = null;
 
@@ -1353,32 +1466,6 @@ function borrarReceta(idReceta) {
       }
     }
 
-    function renderFavoritos() {
-      const contenedor = document.getElementById('lista-recetas-guardadas');
-      contenedor.innerHTML = '';
-
-      if (recetasFavoritas.length === 0) {
-        contenedor.innerHTML = '<p style="padding: 16px; text-align: center; color: var(--text-muted); font-size: 0.9rem;">No tenés recetas guardadas todavía.</p>';
-        return;
-      }
-
-      recetasFavoritas.forEach(receta => {
-        contenedor.innerHTML += `
-          <div class="list-item" onclick="abrirModalReceta('${receta.titulo}', '${receta.contenido}')">
-            <div class="emoji-icon" style="background: #fef2f2; color: var(--danger);">
-              <i data-lucide="heart" style="fill: currentColor;"></i>
-            </div>
-            <div class="item-text">
-              <h4>${receta.titulo}</h4>
-              <p>Guardada desde el Chat</p>
-            </div>
-            <i data-lucide="chevron-right" color="#cbd5e1"></i>
-          </div>
-        `;
-      });
-      lucide.createIcons();
-    }
-
     // --- MODAL FLOTANTE ---
     function abrirModalReceta(titulo, contenido) {
       document.getElementById('modal-title').innerText = titulo;
@@ -1437,6 +1524,117 @@ function borrarReceta(idReceta) {
       if (accionConfirmadaActual) accionConfirmadaActual();
       cerrarConfirmacion();
     }
+
+    let chartEvolucionInstance = null;
+let chartCategoriasInstance = null;
+
+function abrirPantallaEstadisticas() {
+  switchScreen('screen-analytics');
+  cargarEstadisticasAvanzadas();
+}
+
+async function cargarEstadisticasAvanzadas() {
+  const usuarioData = JSON.parse(localStorage.getItem('usuario'));
+  if (!usuarioData) return;
+  
+  const filtro = document.getElementById('filtro-tiempo').value;
+  
+  try {
+    const respuesta = await fetch(`${API_URL}/estadisticas/avanzadas?usuario_id=${usuarioData.id}&tiempo=${filtro}`);
+    if (!respuesta.ok) return;
+    
+    const data = await respuesta.json();
+    renderChartEvolucion(data.evolucion);
+    renderChartCategorias(data.categorias);
+    
+  } catch (error) {
+    console.error("Error cargando estadísticas:", error);
+  }
+}
+
+function renderChartEvolucion(datos) {
+  const ctx = document.getElementById('chartEvolucion').getContext('2d');
+  
+  if (chartEvolucionInstance) {
+    chartEvolucionInstance.destroy();
+  }
+  
+  chartEvolucionInstance = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: datos.fechas.length > 0 ? datos.fechas : ['Sin datos'],
+      datasets: [
+        {
+          label: 'Aprovechados',
+          data: datos.consumidos.length > 0 ? datos.consumidos : [0],
+          backgroundColor: '#10b981', // Verde
+          borderRadius: 4
+        },
+        {
+          label: 'Desperdiciados',
+          data: datos.desperdiciados.length > 0 ? datos.desperdiciados : [0],
+          backgroundColor: '#ef4444', // Rojo
+          borderRadius: 4
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: {
+        x: { stacked: true, grid: { display: false } },
+        y: { stacked: true, beginAtZero: true, ticks: { stepSize: 1 } }
+      },
+      plugins: {
+        legend: { position: 'bottom', labels: { usePointStyle: true, font: { family: "'Outfit', sans-serif" } } }
+      }
+    }
+  });
+}
+
+function renderChartCategorias(categoriasObj) {
+  const ctx = document.getElementById('chartCategorias').getContext('2d');
+  
+  if (chartCategoriasInstance) {
+    chartCategoriasInstance.destroy();
+  }
+  
+  const labels = Object.keys(categoriasObj);
+  const data = Object.values(categoriasObj);
+  
+  const tieneDatos = labels.length > 0;
+  
+  // Paleta de colores atractiva
+  const colores = ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#14b8a6', '#f43f5e', '#64748b'];
+
+  chartCategoriasInstance = new Chart(ctx, {
+    type: 'pie',
+    data: {
+      labels: tieneDatos ? labels : ['Sin alimentos'],
+      datasets: [{
+        data: tieneDatos ? data : [100],
+        backgroundColor: tieneDatos ? colores.slice(0, labels.length) : ['#e2e8f0'],
+        borderWidth: 2,
+        borderColor: '#ffffff'
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { position: 'bottom', labels: { boxWidth: 12, font: { family: "'Outfit', sans-serif", size: 11 } } },
+        tooltip: {
+          enabled: tieneDatos,
+          callbacks: {
+            label: function(context) {
+              return ' ' + context.label + ': ' + context.raw + '%';
+            }
+          }
+        }
+      }
+    }
+  });
+}
 
   </script>
 </body>
