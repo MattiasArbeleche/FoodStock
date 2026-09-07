@@ -1279,9 +1279,9 @@
     let chatPaso = 0; 
 
     // --- ENVIAR MENSAJE A LA IA (REAL) ---
-    async function handleSendChatUI() {
+    async function handleSendChatUI(mensajeAReintentar) {
       const input = document.getElementById('chat-input');
-      const mensaje = input.value.trim();
+      const mensaje = mensajeAReintentar !== undefined ? mensajeAReintentar : input.value.trim();
       if (mensaje === '') return;
 
       if (!getToken()) return mostrarNotificacion("Por favor, iniciá sesión.");
@@ -1289,12 +1289,16 @@
       const chatContainer = document.getElementById('chat-messages');
 
       // 1. Dibujar el mensaje del usuario (textContent = a salvo de XSS)
-      const bubbleUser = document.createElement('div');
-      bubbleUser.className = 'msg-bubble msg-user';
-      bubbleUser.textContent = mensaje;
-      chatContainer.appendChild(bubbleUser);
-      input.value = '';
-      chatContainer.scrollTop = chatContainer.scrollHeight;
+      // Si es un mensaje nuevo (no un reintento), lo dibujamos y limpiamos el input.
+      // Si es un reintento, el bubble del usuario ya está en pantalla, no lo duplicamos.
+      if (mensajeAReintentar === undefined) {
+        const bubbleUser = document.createElement('div');
+        bubbleUser.className = 'msg-bubble msg-user';
+        bubbleUser.textContent = mensaje;
+        chatContainer.appendChild(bubbleUser);
+        input.value = '';
+        chatContainer.scrollTop = chatContainer.scrollHeight;
+      }
 
       // 2. Burbuja temporal de "Pensando"
       const idCarga = 'loading-' + Date.now();
@@ -1346,12 +1350,38 @@
           chatContainer.scrollTop = chatContainer.scrollHeight;
         } else {
           mostrarNotificacion("Error del Chef: " + data.mensaje, "error");
+          mostrarBurbujaReintentar(mensaje, data.mensaje);
         }
       } catch (error) {
         document.getElementById(idCarga)?.remove();
         console.error("Error conectando con la IA:", error);
         mostrarNotificacion("Error de conexión con el Chef", "error");
+        mostrarBurbujaReintentar(mensaje, "No se pudo conectar con el servidor.");
       }
+    }
+
+    // Muestra una burbuja de error con botón para reintentar el mismo mensaje sin retipearlo
+    function mostrarBurbujaReintentar(mensajeOriginal, textoError) {
+      const chatContainer = document.getElementById('chat-messages');
+      const bubble = document.createElement('div');
+      bubble.className = 'msg-bubble msg-ia';
+      bubble.style.borderColor = '#fecaca';
+
+      const texto = document.createElement('span');
+      texto.textContent = textoError || 'Ocurrió un error.';
+      bubble.appendChild(texto);
+
+      const btnRetry = document.createElement('button');
+      btnRetry.textContent = 'Reintentar';
+      btnRetry.style.cssText = 'display:block; margin-top:10px; background: var(--primary); color: white; border: none; padding: 8px 14px; border-radius: 10px; font-weight: 600; cursor: pointer; font-size: 0.85rem;';
+      btnRetry.addEventListener('click', () => {
+        bubble.remove();
+        handleSendChatUI(mensajeOriginal);
+      });
+      bubble.appendChild(btnRetry);
+
+      chatContainer.appendChild(bubble);
+      chatContainer.scrollTop = chatContainer.scrollHeight;
     }
 
     // --- REINICIAR EL CHAT ---
