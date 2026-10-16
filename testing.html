@@ -1641,17 +1641,23 @@ async function ejecutarResolucion(motivo) {
           bubbleIA.className = 'msg-bubble msg-ia';
           bubbleIA.innerHTML = data.respuesta;
 
-          if (pasoActual === 0) {
-            ultimaRespuestaChef = data.respuesta.replace(/<[^>]+>/g, ' ');
-          } else {
-            const tituloReceta = data.titulo_sugerido || 'Receta Nutricional';
-            const btnLike = document.createElement('button');
-            btnLike.className = 'btn-like';
-            btnLike.innerHTML = `<i data-lucide="heart" style="width: 15px; height: 15px;"></i> <span>Guardar en Mis Favoritas</span>`;
-            btnLike.addEventListener('click', () => toggleLike(btnLike, tituloReceta, data.respuesta));
-            bubbleIA.appendChild(document.createElement('br'));
-            bubbleIA.appendChild(btnLike);
-          }
+        if (pasoActual === 0) {
+                    ultimaRespuestaChef = data.respuesta.replace(/<[^>]+>/g, ' ');
+                    const opcionesDiv = document.createElement('div');
+                    opcionesDiv.style.cssText = 'display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px;';
+                    [1, 2, 3].forEach(num => {
+                      const btnOpt = document.createElement('button');
+                      btnOpt.className = 'quick-prompt-chip';
+                      btnOpt.textContent = `👨‍🍳 Ver receta Opción ${num}`;
+                      btnOpt.onclick = () => {
+                        if (chatEnCurso) return;
+                        document.getElementById('chat-input').value = `Quiero la receta detallada de la opción ${num}`;
+                        handleSendChatUI();
+                      };
+                      opcionesDiv.appendChild(btnOpt);
+                    });
+                    bubbleIA.appendChild(opcionesDiv);
+                  }
 
           chatContainer.appendChild(bubbleIA);
           chatPaso = data.paso_siguiente;
