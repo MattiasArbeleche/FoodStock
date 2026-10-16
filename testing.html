@@ -422,22 +422,25 @@
 </head>
 <body>
 
-  <div class="confirm-overlay" id="resolve-modal">
+<div class="confirm-overlay" id="resolve-modal">
     <div class="confirm-box">
       <div style="background: var(--primary-light); color: var(--primary); width: 60px; height: 60px; border-radius: 50%; display: flex; justify-content: center; align-items: center; margin-bottom: 14px;">
         <i data-lucide="utensils" width="28" height="28"></i>
       </div>
       <h3 style="margin-bottom: 6px; color: var(--text-main); font-size: 1.15rem;">¿Qué pasó con este alimento?</h3>
-      <p style="color: var(--text-muted); font-size: 0.88rem; margin-bottom: 20px; line-height: 1.45;">Actualizaremos tus métricas de aprovechamiento nutricional.</p>
+      <p style="color: var(--text-muted); font-size: 0.88rem; margin-bottom: 20px; line-height: 1.45;">Elegí cómo darlo de baja de tu stock actual.</p>
       
       <div style="display: flex; flex-direction: column; gap: 10px; width: 100%;">
         <button onclick="ejecutarResolucion('consumido')" style="padding: 13px; border-radius: 14px; border: none; background: var(--primary); color: white; font-weight: 600; cursor: pointer;">
           <i data-lucide="check" style="display: inline-block; vertical-align: middle; margin-right: 6px; width: 18px;"></i> Lo consumimos
         </button>
         <button onclick="ejecutarResolucion('desperdiciado')" style="padding: 13px; border-radius: 14px; border: 1px solid var(--danger); background: var(--danger-light); color: var(--danger); font-weight: 600; cursor: pointer;">
-          <i data-lucide="trash-2" style="display: inline-block; vertical-align: middle; margin-right: 6px; width: 18px;"></i> Se echó a perder
+          <i data-lucide="alert-triangle" style="display: inline-block; vertical-align: middle; margin-right: 6px; width: 18px;"></i> Se echó a perder
         </button>
-        <button onclick="cerrarResolucion()" style="padding: 11px; border-radius: 14px; border: none; background: transparent; color: var(--text-muted); font-weight: 600; cursor: pointer;">
+        <button onclick="ejecutarResolucion('eliminado')" style="padding: 12px; border-radius: 14px; border: 1px solid var(--border-strong); background: var(--bg-3); color: var(--fg); font-weight: 600; cursor: pointer;">
+          <i data-lucide="trash-2" style="display: inline-block; vertical-align: middle; margin-right: 6px; width: 17px;"></i> Eliminar directo (error de carga)
+        </button>
+        <button onclick="cerrarResolucion()" style="padding: 10px; border-radius: 14px; border: none; background: transparent; color: var(--text-muted); font-weight: 600; cursor: pointer;">
           Cancelar
         </button>
       </div>
@@ -1450,18 +1453,27 @@
       document.getElementById('resolve-modal').classList.remove('active');
       alimentoAResolver = null;
     }
-    async function ejecutarResolucion(motivo) {
+async function ejecutarResolucion(motivo) {
       if (!alimentoAResolver) return;
+      const idBorrar = alimentoAResolver;
+      cerrarResolucion();
+
       try {
-        const respuesta = await apiFetch(`/alimentos/${alimentoAResolver}?motivo=${motivo}`, { method: 'DELETE' });
+        const respuesta = await apiFetch(`/alimentos/${idBorrar}?motivo=${motivo}`, { method: 'DELETE' });
+        const data = await respuesta.json();
+
         if (respuesta.ok) {
-          mostrarNotificacion(`Registrado como ${motivo}`, "success");
-          loadAlimentos();
-          updateDashboardStats();
-          renderGraficos();
+          mostrarNotificacion(data.mensaje || "Stock actualizado", "success");
+          await loadAlimentos();
+          await updateDashboardStats();
+          await renderGraficos();
+        } else {
+          mostrarNotificacion(data.mensaje || "No se pudo eliminar el alimento", "error");
         }
-      } catch (error) { mostrarNotificacion("Error de conexión", "error"); }
-      finally { cerrarResolucion(); }
+      } catch (error) {
+        console.error("Error borrando alimento:", error);
+        mostrarNotificacion("Error de conexión al borrar el alimento", "error");
+      }
     }
 
     let odiadosArray = [];
