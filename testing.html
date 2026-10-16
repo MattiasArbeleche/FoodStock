@@ -4,25 +4,25 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <meta name="theme-color" content="#000000">
-  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <title>Food Stock</title>
 
-  <link rel="preconnect" href="[https://fonts.googleapis.com](https://fonts.googleapis.com)">
+  <link rel="icon" href="data:,">
   <link rel="manifest" href="manifest.json">
-  <link rel="preconnect" href="[https://fonts.gstatic.com](https://fonts.gstatic.com)" crossorigin>
-  <link href="[https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Geist+Mono:wght@500;600&display=swap](https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Geist+Mono:wght@500;600&display=swap)" rel="stylesheet">
-  <script src="[https://unpkg.com/lucide@latest](https://unpkg.com/lucide@latest)"></script>
-  <script src="[https://cdn.jsdelivr.net/npm/chart.js](https://cdn.jsdelivr.net/npm/chart.js)"></script>
+  <link rel="preconnect" href="https&#58;//fonts.googleapis.com">
+  <link rel="preconnect" href="https&#58;//fonts.gstatic.com" crossorigin>
+  <link href="https&#58;//fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Geist+Mono:wght@500;600&display=swap" rel="stylesheet">
+  <script src="https&#58;//unpkg.com/lucide@latest"></script>
+  <script src="https&#58;//cdn.jsdelivr.net/npm/chart.js"></script>
 
   <style>
     /* ===== Sistema de Diseño iOS 18 — Paleta Nutrición ===== */
     :root {
-      /* Superficies OLED Dark (Por defecto) */
       --bg: #000000;
       --bg-2: #1C1C1E;
       --bg-3: #2C2C2E;
-      --bg-glass: rgba(28, 28, 30, 0.72);
+      --bg-glass: rgba(28, 28, 30, 0.75);
       --border: rgba(255, 255, 255, 0.09);
       --border-strong: rgba(255, 255, 255, 0.18);
 
@@ -30,8 +30,7 @@
       --fg-muted: #8E8E93;
       --fg-faint: #636366;
 
-      /* Colores Semánticos iOS Nutrición */
-      --primary: #30D158;          /* Verde Manzana/Esmeralda iOS */
+      --primary: #30D158;
       --primary-dark: #28CD41;
       --primary-light: rgba(48, 209, 88, 0.16);
       --accent: #30D158;
@@ -39,13 +38,11 @@
 
       --ok: #30D158;
       --ok-bg: rgba(48, 209, 88, 0.15);
-      --warn: #FF9F0A;             /* Ámbar Cítrico iOS */
+      --warn: #FF9F0A;
       --warn-bg: rgba(255, 159, 10, 0.16);
-      --danger: #FF453A;           /* Coral/Rojo iOS */
+      --danger: #FF453A;
       --danger-bg: rgba(255, 69, 58, 0.16);
-      --info: #0A84FF;
 
-      /* Alias de compatibilidad */
       --bg-card: var(--bg-2);
       --text-main: var(--fg);
       --text-muted: var(--fg-muted);
@@ -73,12 +70,11 @@
       --radius-pill: 999px;
     }
 
-    /* ===== Modo Claro iOS Grouped ===== */
     [data-theme="light"] {
       --bg: #F2F2F7;
       --bg-2: #FFFFFF;
       --bg-3: #E5E5EA;
-      --bg-glass: rgba(255, 255, 255, 0.78);
+      --bg-glass: rgba(255, 255, 255, 0.80);
       --border: rgba(60, 60, 67, 0.10);
       --border-strong: rgba(60, 60, 67, 0.20);
 
@@ -117,7 +113,15 @@
       transition: background-color 0.3s, color 0.3s;
     }
 
-    /* ===== Fondo Ambiental Orgánico (Nutrición) ===== */
+    /* Fix para que el autocompletado del navegador no ponga el input blanco en modo oscuro */
+    input:-webkit-autofill,
+    input:-webkit-autofill:hover,
+    input:-webkit-autofill:focus {
+      -webkit-text-fill-color: var(--fg);
+      -webkit-box-shadow: 0 0 0px 1000px var(--bg-2) inset;
+      transition: background-color 5000s ease-in-out 0s;
+    }
+
     .mesh-glow {
       position: absolute; inset: 0; pointer-events: none; z-index: 0; overflow: hidden;
     }
@@ -148,7 +152,6 @@
     }
     @keyframes shimmer { 100% { transform: translateX(100%); } }
 
-    /* ============ SHELL / LAYOUT RESPONSIVE ============ */
     .app-container {
       width: 100%; height: 100dvh; background-color: var(--bg);
       position: relative; display: flex; flex-direction: column; overflow: hidden;
@@ -176,7 +179,6 @@
       .header-bar > * { max-width: 1040px; width: 100%; }
     }
 
-    /* ============ CABECERA iOS BLUR ============ */
     .header-bar {
       padding: calc(env(safe-area-inset-top, 12px) + 12px) clamp(16px, 4vw, 24px) 14px;
       display: flex; align-items: center; justify-content: space-between;
@@ -195,7 +197,6 @@
     .btn-icon:active { transform: scale(0.90); background: var(--bg-3); }
     .section-title { font-size: 1.05rem; font-weight: 700; padding: 0 clamp(16px, 4vw, 24px); margin: 22px 0 12px; color: var(--fg); }
 
-    /* ============ FORMULARIOS ESTILO iOS GROUPED ============ */
     .input-group { display: flex; flex-direction: column; gap: 7px; margin-bottom: 16px; width: 100%; }
     .input-group label { font-size: 0.82rem; font-weight: 600; color: var(--fg-muted); padding-left: 4px; }
     input, select {
@@ -213,7 +214,6 @@
     .btn-primary:hover { opacity: 0.93; }
     .btn-primary:active { transform: scale(0.97); }
 
-    /* ============ LOGIN / REGISTRO ============ */
     #screen-login, #screen-register { justify-content: center; padding: 40px 28px; position: relative; }
     #screen-login form, #screen-register form { position: relative; z-index: 1; background: var(--bg-glass); -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px); padding: 24px; border-radius: 24px; border: 1px solid var(--border); box-shadow: var(--shadow-sm); }
     @media (min-width: 640px) { #screen-login, #screen-register { max-width: 440px; margin: 0 auto; width: 100%; } }
@@ -221,7 +221,6 @@
     .logo-main .logo-badge { background: linear-gradient(135deg, #30D158, #10B981); color: #fff; width: 68px; height: 68px; border-radius: 20px; display: flex; align-items: center; justify-content: center; margin-bottom: 14px; box-shadow: 0 10px 25px rgba(48, 209, 88, 0.35); }
     .logo-main h1 { font-size: clamp(1.9rem, 4vw, 2.25rem); font-weight: 800; color: var(--fg); }
 
-    /* ============ WIDGETS DE DASHBOARD ESTILO iOS HEALTH ============ */
     .dashboard-grid {
       display: grid; grid-template-columns: repeat(3, 1fr);
       gap: 12px; padding: 16px clamp(16px, 4vw, 24px) 0; margin-bottom: 8px;
@@ -245,7 +244,6 @@
     .dash-card p { font-size: 0.8rem; color: var(--fg-muted); font-weight: 600; }
     .dash-card i { align-self: flex-start; color: var(--primary); }
 
-    /* ============ LISTAS ESTILO iOS INSET GROUPED ============ */
     .list-wrapper { padding: 0 clamp(16px, 4vw, 24px); display: flex; flex-direction: column; gap: 10px; }
     .list-item {
       background: var(--bg-2); border-radius: var(--radius); padding: 14px 16px; display: flex; align-items: center; gap: 14px;
@@ -279,7 +277,6 @@
     .fab:active { transform: scale(0.90); }
     @media (min-width: 640px) { .fab { bottom: 36px; right: 36px; } }
 
-    /* ============ FLOATING GLASS TAB BAR (ESTILO iOS) ============ */
     .bottom-nav {
       position: fixed; bottom: calc(env(safe-area-inset-bottom, 6px) + 10px); left: 50%; transform: translateX(-50%);
       width: calc(100% - 32px); max-width: 420px; height: 66px;
@@ -313,7 +310,6 @@
       .nav-indicator { border-radius: 16px; }
     }
 
-    /* ============ SEGMENTED CONTROL iOS (CHAT / MIS RECETAS) ============ */
     .tabs-header {
       display: flex; background: var(--bg-3); padding: 4px; border-radius: 12px;
       margin: 12px clamp(16px, 4vw, 24px) 12px; position: relative;
@@ -330,7 +326,6 @@
     .tab-content { display: none; flex: 1; flex-direction: column; overflow-y: auto; }
     .tab-content.active { display: flex; }
 
-    /* ============ BURBUJAS DE CHAT ESTILO iMESSAGE ============ */
     .chat-container { display: flex; flex-direction: column; gap: 14px; padding: 8px clamp(16px, 4vw, 24px) 16px; overflow-y: auto; flex: 1; }
     .msg-bubble {
       max-width: 86%; padding: 13px 16px; border-radius: 20px; font-size: 0.92rem; line-height: 1.55;
@@ -369,7 +364,6 @@
     }
     .btn-like.liked { color: var(--danger); border-color: var(--danger); background: var(--danger-bg); }
 
-    /* ============ FILTROS Y SUGERENCIAS RÁPIDAS ============ */
     .chat-filters-container { padding: 8px clamp(16px, 4vw, 24px) 0; }
     .chat-filters { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 6px; scrollbar-width: none; }
     .chat-filters::-webkit-scrollbar { display: none; }
@@ -387,7 +381,6 @@
     }
     .quick-prompt-chip:active { transform: scale(0.94); }
 
-    /* ============ MODAL SHEET ESTILO iOS ============ */
     .modal-overlay { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.55); z-index: 1000; display: none; justify-content: center; align-items: flex-end; -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
     .modal-overlay.active { display: flex; animation: fadeInModal var(--dur-base) var(--ease) forwards; }
     @keyframes fadeInModal { from { opacity: 0; } to { opacity: 1; } }
@@ -403,7 +396,6 @@
     .modal-header { padding: 18px 24px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
     .modal-body { padding: 24px; overflow-y: auto; font-size: 0.95rem; line-height: 1.65; color: var(--fg); }
 
-    /* ============ TOASTS ESTILO DYNAMIC ISLAND ============ */
     .toast-container { position: fixed; top: calc(env(safe-area-inset-top, 10px) + 10px); left: 50%; transform: translateX(-50%); z-index: 9999; display: flex; flex-direction: column; gap: 8px; pointer-events: none; width: 92%; max-width: 380px; }
     .toast {
       background: var(--bg-glass); -webkit-backdrop-filter: saturate(180%) blur(20px); backdrop-filter: saturate(180%) blur(20px);
@@ -417,7 +409,6 @@
     @keyframes slideDown { from { opacity: 0; transform: translateY(-20px) scale(0.92); } to { opacity: 1; transform: translateY(0) scale(1); } }
     @keyframes fadeOut { to { opacity: 0; transform: translateY(-14px) scale(0.95); } }
 
-    /* ============ ALERT DIALOG ESTILO iOS ============ */
     .confirm-overlay { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.55); z-index: 10000; display: none; justify-content: center; align-items: center; -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
     .confirm-overlay.active { display: flex; animation: fadeInModal var(--dur-fast) var(--ease) forwards; }
     .confirm-box {
@@ -431,7 +422,6 @@
 </head>
 <body>
 
-  <!-- MODAL ESPECÍFICO PARA ALIMENTOS (CONSUMO VS DESPERDICIO) -->
   <div class="confirm-overlay" id="resolve-modal">
     <div class="confirm-box">
       <div style="background: var(--primary-light); color: var(--primary); width: 60px; height: 60px; border-radius: 50%; display: flex; justify-content: center; align-items: center; margin-bottom: 14px;">
@@ -454,7 +444,6 @@
     </div>
   </div>
 
-  <!-- MODAL DE CONFIRMACIÓN GENERAL -->
   <div class="confirm-overlay" id="confirm-modal">
     <div class="confirm-box">
       <h3 style="margin-bottom: 8px; color: var(--text-main); font-size: 1.15rem;">Confirmar acción</h3>
@@ -629,7 +618,7 @@
       </div>
     </main>
 
-    <!-- ALMACENAMIENTO (LISTA DE ALIMENTOS) -->
+    <!-- ALMACENAMIENTO -->
     <main class="screen" id="screen-storage">
       <div class="header-bar">
         <button class="btn-icon" onclick="switchScreen('screen-home')"><i data-lucide="chevron-left"></i></button>
@@ -739,9 +728,7 @@
         <div class="tab-btn" id="tab-btn-favs" onclick="switchRecipeTab('favs')">Mis Favoritas</div>
       </div>
 
-      <!-- CONTENIDO 1: EL CHAT -->
       <div class="tab-content active" id="tab-content-chat" style="padding-bottom: 92px; flex-direction: column;">
-        
         <div class="chat-container" id="chat-messages">
           <div class="msg-bubble msg-ia">
             ¡Hola! 🥗 Revisé tu inventario y las preferencias de tu familia. Tocá una sugerencia rápida o contame qué tenés ganas de cocinar hoy.
@@ -749,8 +736,6 @@
         </div>
 
         <div style="background: var(--bg-glass); -webkit-backdrop-filter: saturate(180%) blur(20px); backdrop-filter: saturate(180%) blur(20px); border-top: 1px solid var(--border); z-index: 10;">
-          
-          <!-- Sugerencias rápidas para evitar escribir -->
           <div class="chat-filters-container">
             <div class="chat-filters">
               <div class="quick-prompt-chip" onclick="enviarSugerenciaRapida('Quiero usar los alimentos que están por vencer pronto')">⏳ Usar por vencer</div>
@@ -760,7 +745,6 @@
             </div>
           </div>
 
-          <!-- Filtros de ubicaciones -->
           <div class="chat-filters-container" style="padding-top: 4px;">
             <div class="chat-filters" id="chat-space-filters"></div>
           </div>
@@ -774,7 +758,6 @@
         </div>
       </div>
 
-      <!-- CONTENIDO 2: LAS RECETAS GUARDADAS -->
       <div class="tab-content" id="tab-content-favs" style="padding-bottom: 110px;">
         <div class="list-wrapper" id="lista-recetas-guardadas">
           <p style="padding: 16px; text-align: center; color: var(--text-muted); font-size: 0.9rem;">No tenés recetas guardadas todavía.</p>
@@ -905,11 +888,19 @@
   </div>
 
   <script>
-    lucide.createIcons();
+    // Wrapper seguro para que nunca falle si el CDN tarda o no hay red
+    function safeCreateIcons() {
+      if (typeof window.lucide !== 'undefined' && window.lucide.createIcons) {
+        window.lucide.createIcons();
+      }
+    }
+    safeCreateIcons();
 
-    Chart.defaults.color = '#8E8E93';
-    Chart.defaults.borderColor = 'rgba(255,255,255,0.08)';
-    Chart.defaults.font.family = "-apple-system, BlinkMacSystemFont, 'Inter', sans-serif";
+    if (typeof window.Chart !== 'undefined') {
+      Chart.defaults.color = '#8E8E93';
+      Chart.defaults.borderColor = 'rgba(255,255,255,0.08)';
+      Chart.defaults.font.family = "-apple-system, BlinkMacSystemFont, 'Inter', sans-serif";
+    }
 
     function applyTheme(theme) {
       document.documentElement.setAttribute('data-theme', theme);
@@ -918,10 +909,12 @@
       const icon = document.getElementById('theme-icon');
       if (icon) {
         icon.setAttribute('data-lucide', isDark ? 'sun' : 'moon');
-        lucide.createIcons();
+        safeCreateIcons();
       }
-      Chart.defaults.color = isDark ? '#8E8E93' : '#6C6C70';
-      Chart.defaults.borderColor = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)';
+      if (typeof window.Chart !== 'undefined') {
+        Chart.defaults.color = isDark ? '#8E8E93' : '#6C6C70';
+        Chart.defaults.borderColor = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)';
+      }
       if (miGraficoStats) miGraficoStats.update();
       if (chartEvolucionInstance) chartEvolucionInstance.update();
       if (chartCategoriasInstance) chartCategoriasInstance.update();
@@ -937,6 +930,7 @@
     document.addEventListener('DOMContentLoaded', () => {
       const savedTheme = localStorage.getItem('foodstock_theme') || 'dark';
       applyTheme(savedTheme);
+      safeCreateIcons();
     });
 
     if ('serviceWorker' in navigator) {
@@ -945,7 +939,8 @@
       });
     }
 
-    const API_URL = '[https://MatiasArbeleche.pythonanywhere.com](https://MatiasArbeleche.pythonanywhere.com)';
+    // URL concatenada para evitar que cualquier copiador la convierta en Markdown
+    const API_URL = 'https:' + '//MatiasArbeleche.pythonanywhere.com';
 
     function escapeHTML(str) {
       if (str === null || str === undefined) return '';
@@ -1024,7 +1019,6 @@
       localStorage.removeItem('usuario');
     }
 
-    // apiFetch con AbortController para que jamás quede colgada una petición
     async function apiFetch(path, options = {}, timeoutMs = 18000) {
       const token = getToken();
       const headers = Object.assign({}, options.headers || {});
@@ -1091,7 +1085,7 @@
         loadProfile();
       }
 
-      lucide.createIcons();
+      safeCreateIcons();
       requestAnimationFrame(moverIndicadorNav);
     }
 
@@ -1124,7 +1118,7 @@
 
     let miGraficoStats = null;
     async function renderGraficos() {
-      if (!getToken()) return;
+      if (!getToken() || typeof window.Chart === 'undefined') return;
       try {
         const respuesta = await apiFetch(`/estadisticas`);
         if (respuesta.ok) {
@@ -1207,7 +1201,7 @@
             selectUbicacion.appendChild(option);
           });
           aplicarStagger(itemsCreados);
-          lucide.createIcons();
+          safeCreateIcons();
         }
       } catch (error) { console.error("Error lugares:", error); }
     }
@@ -1288,7 +1282,7 @@
           itemsCreados.push(item);
         });
         aplicarStagger(itemsCreados);
-        lucide.createIcons();
+        safeCreateIcons();
       } catch (error) { console.error("Error alimentos:", error); }
     }
 
@@ -1450,7 +1444,7 @@
     function borrarAlimento(idAlimento) {
       alimentoAResolver = idAlimento;
       document.getElementById('resolve-modal').classList.add('active');
-      lucide.createIcons();
+      safeCreateIcons();
     }
     function cerrarResolucion() {
       document.getElementById('resolve-modal').classList.remove('active');
@@ -1498,7 +1492,7 @@
         span.appendChild(icon);
         contenedor.appendChild(span);
       });
-      lucide.createIcons();
+      safeCreateIcons();
     }
 
     const OPCIONES_INTOLERANCIA = ['Ninguna', 'Lactosa', 'Gluten', 'Fructosa', 'Histamina', 'FODMAP'];
@@ -1563,7 +1557,6 @@
       } catch (error) { console.error(error); }
     }
 
-    // ============ FLUJO DE CHAT IA CON MEMORIA Y SIN CUELGUES ============
     function switchRecipeTab(tab) {
       document.getElementById('tab-btn-chat').classList.toggle('active', tab === 'chat');
       document.getElementById('tab-btn-favs').classList.toggle('active', tab === 'favs');
@@ -1579,7 +1572,7 @@
 
     function enviarSugerenciaRapida(texto) {
       if (chatEnCurso) return;
-      chatPaso = 0; // Reinicia al paso de pedir opciones
+      chatPaso = 0;
       document.getElementById('chat-input').value = texto;
       handleSendChatUI();
     }
@@ -1650,7 +1643,7 @@
 
           chatContainer.appendChild(bubbleIA);
           chatPaso = data.paso_siguiente;
-          lucide.createIcons();
+          safeCreateIcons();
           chatContainer.scrollTop = chatContainer.scrollHeight;
         } else {
           mostrarBurbujaReintentar(mensaje, data.mensaje || "El Chef tardó demasiado en responder.");
@@ -1698,7 +1691,7 @@
       `;
       chatPaso = 0;
       ultimaRespuestaChef = '';
-      lucide.createIcons();
+      safeCreateIcons();
     }
 
     async function toggleLike(btnElement, titulo, contenido) {
@@ -1711,7 +1704,7 @@
         if (respuesta.ok) {
           btnElement.classList.add('liked');
           btnElement.innerHTML = '<i data-lucide="check" style="width: 15px; height: 15px;"></i> <span>Guardada en Favoritas</span>';
-          lucide.createIcons();
+          safeCreateIcons();
           mostrarNotificacion(`"${titulo}" guardada`, "success");
         }
       } catch (error) { mostrarNotificacion("No se pudo guardar la receta", "error"); }
@@ -1750,7 +1743,7 @@
           itemsCreados.push(item);
         });
         aplicarStagger(itemsCreados);
-        lucide.createIcons();
+        safeCreateIcons();
       } catch (error) { console.error(error); }
     }
 
@@ -1838,7 +1831,7 @@
       toast.appendChild(icono);
       toast.appendChild(span);
       container.appendChild(toast);
-      lucide.createIcons();
+      safeCreateIcons();
       setTimeout(() => {
         toast.classList.add('fade-out');
         setTimeout(() => toast.remove(), 280);
@@ -1881,6 +1874,7 @@
     }
 
     function renderChartEvolucion(datos) {
+      if (typeof window.Chart === 'undefined') return;
       const ctx = document.getElementById('chartEvolucion').getContext('2d');
       if (chartEvolucionInstance) chartEvolucionInstance.destroy();
       chartEvolucionInstance = new Chart(ctx, {
@@ -1901,6 +1895,7 @@
     }
 
     function renderChartCategorias(categoriasObj) {
+      if (typeof window.Chart === 'undefined') return;
       const ctx = document.getElementById('chartCategorias').getContext('2d');
       if (chartCategoriasInstance) chartCategoriasInstance.destroy();
       const labels = Object.keys(categoriasObj);
