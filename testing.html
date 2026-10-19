@@ -1589,106 +1589,113 @@ async function ejecutarResolucion(motivo) {
       handleSendChatUI();
     }
 
-    async function handleSendChatUI(mensajeAReintentar) {
-      if (chatEnCurso) return;
-      const input = document.getElementById('chat-input');
-      const mensaje = mensajeAReintentar !== undefined ? mensajeAReintentar : input.value.trim();
-      if (mensaje === '') return;
+async function handleSendChatUI(mensajeAReintentar) {
+  if (chatEnCurso) return;
+  const input = document.getElementById('chat-input');
+  const mensaje = mensajeAReintentar !== undefined ? mensajeAReintentar : input.value.trim();
+  if (mensaje === '') return;
 
-      const chatContainer = document.getElementById('chat-messages');
+  const chatContainer = document.getElementById('chat-messages');
 
-      if (mensajeAReintentar === undefined) {
-        const bubbleUser = document.createElement('div');
-        bubbleUser.className = 'msg-bubble msg-user';
-        bubbleUser.textContent = mensaje;
-        chatContainer.appendChild(bubbleUser);
-        input.value = '';
-        chatContainer.scrollTop = chatContainer.scrollHeight;
+  if (mensajeAReintentar === undefined) {
+    const bubbleUser = document.createElement('div');
+    bubbleUser.className = 'msg-bubble msg-user';
+    bubbleUser.textContent = mensaje;
+    chatContainer.appendChild(bubbleUser);
+    input.value = '';
+    chatContainer.scrollTop = chatContainer.scrollHeight;
+  }
+
+  // ESCUDO VISUAL: Bloqueamos la interfaz para evitar clics múltiples y bucles
+  chatEnCurso = true;
+  input.disabled = true;
+  input.placeholder = "El Chef está cocinando tu receta...";
+
+  const idCarga = 'loading-' + Date.now();
+  const bubbleLoading = document.createElement('div');
+  bubbleLoading.className = 'msg-bubble msg-ia';
+  bubbleLoading.id = idCarga;
+  bubbleLoading.style.display = 'flex';
+  bubbleLoading.style.alignItems = 'center';
+  bubbleLoading.style.gap = '10px';
+  bubbleLoading.innerHTML = `
+    <span style="color: var(--fg-muted); font-size: 0.85rem;">Diseñando propuesta nutricional</span>
+    <span class="thinking-dots"><span></span><span></span><span></span></span>
+  `;
+  chatContainer.appendChild(bubbleLoading);
+  chatContainer.scrollTop = chatContainer.scrollHeight;
+
+  try {
+    const pasoActual = chatPaso;
+    const respuesta = await apiFetch(`/chat`, {
+      method: 'POST',
+      body: JSON.stringify({
+        mensaje: mensaje,
+        paso: pasoActual,
+        espacios: espaciosParaIA,
+        contexto_previo: ultimaRespuestaChef
+      })
+    }, 40000); // 40 SEGUNDOS de límite estricto en el frontend
+
+    const data = await respuesta.json();
+    document.getElementById(idCarga)?.remove();
+
+    if (respuesta.ok) {
+      const bubbleIA = document.createElement('div');
+      bubbleIA.className = 'msg-bubble msg-ia';
+      bubbleIA.innerHTML = data.respuesta;
+      
+      if (pasoActual === 0) {
+        ultimaRespuestaChef = data.respuesta.replace(/<[^>]+>/g, ' ');
+        
+        const opcionesDiv = document.createElement('div');
+        opcionesDiv.style.cssText = 'display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px;';
+        [1, 2, 3].forEach(num => {
+          const btnOpt = document.createElement('button');
+          btnOpt.className = 'quick-prompt-chip';
+          btnOpt.textContent = `👨‍🍳 Ver receta Opción ${num}`;
+          btnOpt.onclick = () => {
+            if (chatEnCurso) return;
+            document.getElementById('chat-input').value = `Quiero la receta detallada de la opción ${num}`;
+            handleSendChatUI();
+          };
+          opcionesDiv.appendChild(btnOpt);
+        });
+        bubbleIA.appendChild(opcionesDiv);
+        
+      } else {
+        const tituloReceta = data.titulo_sugerido || 'Receta Nutricional';
+        const btnLike = document.createElement('button');
+        btnLike.className = 'btn-like';
+        btnLike.innerHTML = `<i data-lucide="heart" style="width: 15px; height: 15px;"></i> <span>Guardar en Mis Favoritas</span>`;
+        btnLike.addEventListener('click', () => toggleLike(btnLike, tituloReceta, data.respuesta));
+        
+        bubbleIA.appendChild(document.createElement('br'));
+        bubbleIA.appendChild(btnLike);
       }
 
-      chatEnCurso = true;
-      const idCarga = 'loading-' + Date.now();
-      const bubbleLoading = document.createElement('div');
-      bubbleLoading.className = 'msg-bubble msg-ia';
-      bubbleLoading.id = idCarga;
-      bubbleLoading.style.display = 'flex';
-      bubbleLoading.style.alignItems = 'center';
-      bubbleLoading.style.gap = '10px';
-      bubbleLoading.innerHTML = `
-        <span style="color: var(--fg-muted); font-size: 0.85rem;">Diseñando propuesta nutricional</span>
-        <span class="thinking-dots"><span></span><span></span><span></span></span>
-      `;
-      chatContainer.appendChild(bubbleLoading);
+      chatContainer.appendChild(bubbleIA);
+      chatPaso = data.paso_siguiente;
+      safeCreateIcons();
       chatContainer.scrollTop = chatContainer.scrollHeight;
-
-      try {
-        const pasoActual = chatPaso;
-        const respuesta = await apiFetch(`/chat`, {
-          method: 'POST',
-          body: JSON.stringify({
-            mensaje: mensaje,
-            paso: pasoActual,
-            espacios: espaciosParaIA,
-            contexto_previo: ultimaRespuestaChef
-          })
-        }, 60000);
-
-        const data = await respuesta.json();
-        document.getElementById(idCarga)?.remove();
-
-        if (respuesta.ok) {
-          const bubbleIA = document.createElement('div');
-          bubbleIA.className = 'msg-bubble msg-ia';
-          bubbleIA.innerHTML = data.respuesta;
-          
-        if (pasoActual === 0) {
-            ultimaRespuestaChef = data.respuesta.replace(/<[^>]+>/g, ' ');
-            
-            // Botones rápidos para elegir opción sin escribir
-            const opcionesDiv = document.createElement('div');
-            opcionesDiv.style.cssText = 'display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px;';
-            [1, 2, 3].forEach(num => {
-              const btnOpt = document.createElement('button');
-              btnOpt.className = 'quick-prompt-chip';
-              btnOpt.textContent = `👨‍🍳 Ver receta Opción ${num}`;
-              btnOpt.onclick = () => {
-                if (chatEnCurso) return;
-                document.getElementById('chat-input').value = `Quiero la receta detallada de la opción ${num}`;
-                handleSendChatUI();
-              };
-              opcionesDiv.appendChild(btnOpt);
-            });
-            bubbleIA.appendChild(opcionesDiv);
-            
-          } else {
-            // Botón de Favoritos al mostrar la receta completa
-            const tituloReceta = data.titulo_sugerido || 'Receta Nutricional';
-            const btnLike = document.createElement('button');
-            btnLike.className = 'btn-like';
-            btnLike.innerHTML = `<i data-lucide="heart" style="width: 15px; height: 15px;"></i> <span>Guardar en Mis Favoritas</span>`;
-            btnLike.addEventListener('click', () => toggleLike(btnLike, tituloReceta, data.respuesta));
-            
-            bubbleIA.appendChild(document.createElement('br'));
-            bubbleIA.appendChild(btnLike);
-          }
-
-          chatContainer.appendChild(bubbleIA);
-          chatPaso = data.paso_siguiente;
-          safeCreateIcons();
-          chatContainer.scrollTop = chatContainer.scrollHeight;
-        } else {
-          mostrarBurbujaReintentar(mensaje, data.mensaje || "El Chef tardó demasiado en responder.");
-        }
-      } catch (error) {
-        document.getElementById(idCarga)?.remove();
-        const msgError = error.name === 'AbortError'
-          ? "La consulta superó el tiempo límite (20s). Tocá Reintentar."
-          : "No se pudo conectar con el Chef IA.";
-        mostrarBurbujaReintentar(mensaje, msgError);
-      } finally {
-        chatEnCurso = false;
-      }
+    } else {
+      mostrarBurbujaReintentar(mensaje, data.mensaje || "El Chef tardó demasiado en responder.");
     }
+  } catch (error) {
+    document.getElementById(idCarga)?.remove();
+    // Corrección del texto para que refleje el tiempo real
+    const msgError = error.name === 'AbortError'
+      ? "La consulta superó el tiempo límite de espera. Tocá Reintentar."
+      : "No se pudo conectar con el Chef IA.";
+    mostrarBurbujaReintentar(mensaje, msgError);
+  } finally {
+    // LIBERAMOS EL ESCUDO: Pase lo que pase, el input vuelve a estar disponible
+    chatEnCurso = false;
+    input.disabled = false;
+    input.placeholder = "Escribí tu mensaje acá...";
+    input.focus();
+  }
+}
 
     function mostrarBurbujaReintentar(mensajeOriginal, textoError) {
       const chatContainer = document.getElementById('chat-messages');
