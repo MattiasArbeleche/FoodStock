@@ -1631,7 +1631,7 @@ async function ejecutarResolucion(motivo) {
             espacios: espaciosParaIA,
             contexto_previo: ultimaRespuestaChef
           })
-        }, 20000);
+        }, 60000);
 
         const data = await respuesta.json();
         document.getElementById(idCarga)?.remove();
