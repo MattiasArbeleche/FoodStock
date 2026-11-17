@@ -1635,7 +1635,7 @@ async function handleSendChatUI(mensajeAReintentar) {
         espacios: espaciosParaIA,
         contexto_previo: ultimaRespuestaChef
       })
-    }, 40000); // 40 SEGUNDOS de límite estricto en el frontend
+    }, 90000); // 40 SEGUNDOS de límite estricto en el frontend
 
     const data = await respuesta.json();
     document.getElementById(idCarga)?.remove();
