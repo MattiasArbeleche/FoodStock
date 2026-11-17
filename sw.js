@@ -29,7 +29,8 @@ self.addEventListener('activate', event => {
 });
 
 self.addEventListener('fetch', event => {
-  if (event.request.url.includes('pythonanywhere.com') || event.request.method !== 'GET') {
+  // Ignorar extensiones de Chrome (esquemas no-http), peticiones a la API o métodos que no sean GET
+  if (!event.request.url.startsWith('http') || event.request.url.includes('pythonanywhere.com') || event.request.method !== 'GET') {
     return;
   }
 
